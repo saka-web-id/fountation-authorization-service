@@ -1,43 +1,34 @@
 server:
-  port: 9000
+    port: 9000
 spring:
-  application:
-    name: fountation-authorization-service
-  main:
-    web-application-type: reactive
-  security:
-    oauth2:
-      client:
-        registration:
-          # A unique identifier for your client registration (e.g., 'internal-auth-server')
-          internal-auth-server:
-            client-id: "fountation-authorization-service-id" # Must be registered in your Auth Server DB/config
-            client-name: "API Gateway Client"
-            client-secret: "{noop}fountation-authorization-service-secret" # Must match what's in your Auth Server DB/config
-            authorization-grant-type: '[authorization_code, refresh_token, client_credentials]'
-            redirect-uri: "lb://fountation-gateway-service/login/oauth2/code/{registrationId}"
-            scope: openid, profile, email
-        provider:
-          # Matches the registration ID above
-          internal-auth-server:
-            # Point this to the base URL of your OWN Spring Authorization Server application
-            issuer-uri: lb://fountation-authorization-service
-      resourceserver:
-        jwt:
-          # Spring Security automatically appends /.well-known/openid-configuration
-          # to this URI to discover the JWK set URI needed for validation
-          issuer-uri: lb://fountation-authorization-service
-    user:
-      name: user1
-      password: password
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
-  instance:
-    preferIpAddress: true
-logging:
-    level:
-        org:
-            springframework:
-                security: trace
+    application:
+        name: fountation-authorization-service
+    security:
+        user:
+            name: user1
+            password: password
+        oauth2:
+            authorizationserver:
+                client:
+                    messaging-client:
+                        registration:
+                            client-id: "messaging-client"
+                            client-secret: "{noop}secret"
+                            client-authentication-methods:
+                                - "client_secret_basic"
+                            authorization-grant-types:
+                                - "authorization_code"
+                                - "refresh_token"
+                                - "client_credentials"
+                            redirect-uris:
+                                - "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc"
+                                - "http://127.0.0.1:8080/authorized"
+                                - "http://127.0.0.1:8080/login/authenticate"
+                            post-logout-redirect-uris:
+                                - "http://127.0.0.1:8080/logged-out"
+                            scopes:
+                                - "openid"
+                                - "profile"
+                                - "message.read"
+                                - "message.write"
+                        require-authorization-consent: true
