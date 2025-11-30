@@ -5,6 +5,11 @@ spring:
     name: fountation-authorization-service
   main:
     web-application-type: reactive
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    cache: false
   security:
     oauth2:
       client:
@@ -12,21 +17,21 @@ spring:
           # A unique identifier for your client registration (e.g., 'internal-auth-server')
           internal-auth-server:
             client-id: "fountation-authorization-service-id" # Must be registered in your Auth Server DB/config
-            client-name: "API Gateway Client"
+            client-name: "fountation-authorization-service-oidc"
             client-secret: "{noop}fountation-authorization-service-secret" # Must match what's in your Auth Server DB/config
             authorization-grant-type: '[authorization_code, refresh_token, client_credentials]'
-            redirect-uri: "lb://fountation-gateway-service/login/oauth2/code/{registrationId}"
-            scope: openid, profile, email
+            redirect-uri: "http://localhost:8080/authorized"
+            scope: openid
         provider:
           # Matches the registration ID above
           internal-auth-server:
             # Point this to the base URL of your OWN Spring Authorization Server application
-            issuer-uri: lb://fountation-authorization-service
+            issuer-uri: http://localhost:9000
       resourceserver:
         jwt:
           # Spring Security automatically appends /.well-known/openid-configuration
           # to this URI to discover the JWK set URI needed for validation
-          issuer-uri: lb://fountation-authorization-service
+          issuer-uri: http://localhost:9000
     user:
       name: user1
       password: password
