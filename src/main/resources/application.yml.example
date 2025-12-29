@@ -1,44 +1,54 @@
 server:
-  port: 9000
+  port: 0
+  error:
+    include-binding-errors: always
+    include-message: always
 spring:
   application:
     name: fountation-authorization-service
   main:
     web-application-type: reactive
-  thymeleaf:
-    prefix: classpath:/templates/
-    suffix: .html
-    mode: HTML
-    cache: false
+  r2dbc:
+    password: XXXXXXXXXXXXXXXXXXXXXXXX
+    url: r2dbc:postgresql://XXXXXXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+    username: XXXXXXXXXXXXXXXXXXXXXXXX
   security:
     oauth2:
       client:
-        registration:
-          # A unique identifier for your client registration (e.g., 'internal-auth-server')
-          internal-auth-server:
-            client-id: "fountation-authorization-service-id" # Must be registered in your Auth Server DB/config
-            client-name: "fountation-authorization-service-oidc"
-            client-secret: "{noop}fountation-authorization-service-secret" # Must match what's in your Auth Server DB/config
-            authorization-grant-type: '[authorization_code, refresh_token, client_credentials]'
-            redirect-uri: "http://localhost:8080/authorized"
-            scope: openid
         provider:
-          # Matches the registration ID above
-          internal-auth-server:
-            # Point this to the base URL of your OWN Spring Authorization Server application
-            issuer-uri: http://localhost:9000
+          auth0:
+            authorization-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/authorize?audience=https://XXXXXXXXXXXXXXXXXXXXXXXX/
+            issuer-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
+            jwk-set-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
+            token-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
+            user-info-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
+        registration:
+          auth0:
+            authorization-grant-type: authorization_code
+            client-id: XXXXXXXXXXXXXXXXXXXXXXXX
+            client-name: Auth0
+            client-secret: XXXXXXXXXXXXXXXXXXXXXXXX
+            provider: auth0
+            redirect-uri: http://XXXXXXXXXXXXXXXXXXXXXXXX
+            scope: openid,profile,email
+          internal-service:
+            authorization-grant-type: client_credentials
+            client-id: XXXXXXXXXXXXXXXXXXXXXXXX
+            client-name: XXXXXXXXXXXXXXXXXXXXXXXX
+            client-secret: XXXXXXXXXXXXXXXXXXXXXXXX
+            provider: auth0
+            scope: internal:service
       resourceserver:
         jwt:
-          # Spring Security automatically appends /.well-known/openid-configuration
-          # to this URI to discover the JWK set URI needed for validation
-          issuer-uri: http://localhost:9000
-    user:
-      name: user1
-      password: password
+          audiences:
+            - https://XXXXXXXXXXXXXXXXXXXXXXXX
+            - https://XXXXXXXXXXXXXXXXXXXXXXXX/
+          issuer-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
+          jwk-set-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
 eureka:
   client:
     serviceUrl:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+      defaultZone: ${EUREKA_URI:http://XXXXXXXXXXXXXXXXXXXXXXXX}
   instance:
     preferIpAddress: true
 logging:
