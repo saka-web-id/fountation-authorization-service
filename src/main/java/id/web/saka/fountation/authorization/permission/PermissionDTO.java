@@ -20,6 +20,9 @@ public class PermissionDTO {
     @JsonProperty("permissionDescription")
     private String description;
 
+    @JsonProperty("isAssigned")
+    private boolean isAssigned;
+
     public Long getId() {
         return id;
     }
@@ -60,6 +63,14 @@ public class PermissionDTO {
         this.description = description;
     }
 
+    public boolean isAssigned() {
+        return isAssigned;
+    }
+
+    public void setAssigned(boolean assigned) {
+        isAssigned = assigned;
+    }
+
     @Override
     public String toString() {
         return "PermissionDTO{" +
@@ -68,6 +79,7 @@ public class PermissionDTO {
                 ", resource='" + resource + '\'' +
                 ", action='" + action + '\'' +
                 ", description='" + description + '\'' +
+                ", isAssigned=" + isAssigned +
                 '}';
     }
 }

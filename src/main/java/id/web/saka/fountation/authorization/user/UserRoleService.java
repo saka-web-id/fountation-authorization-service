@@ -1,11 +1,11 @@
 package id.web.saka.fountation.authorization.user;
 
 import id.web.saka.fountation.authorization.role.Role;
+import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -16,29 +16,26 @@ public class UserRoleService {
 
     private final RoleService roleService;
 
-    public UserRoleService(UserRoleRepository userRoleRepository, RoleService roleService) {
+    private final RoleMapper roleMapper;
+
+    public UserRoleService(UserRoleRepository userRoleRepository, RoleService roleService, RoleMapper roleMapper) {
         this.userRoleRepository = userRoleRepository;
         this.roleService = roleService;
+        this.roleMapper = roleMapper;
     }
 
-    public Mono<Role> getRoleByCompanyIdAndUserId(Long companyId, Long userId) {
+    public Mono<Role> getRoleByUserId(Long userId) {
 
-        return userRoleRepository.findByCompanyIdAndUserId(companyId, userId)
-                .flatMap(userRole -> roleService.getRoleById(String.valueOf(userRole.getRoleId())))
+        return userRoleRepository.findByUserId(userId)
+                .flatMap(userRole -> roleService.getRoleById(userRole.getRoleId()))
                 .doOnNext(role -> {
                     if (role == null) {
-                        throw new RuntimeException("Role not found for userId: " + userId + " in companyId: " + companyId);
+                        throw new RuntimeException("Role not found for userId: " + userId );
                     } else {
-                        log.info("Found role: " + role.toString() + " for userId: " + userId + " in companyId: " + companyId);
+                        log.info("Found role: " + role.toString() + " for userId: " + userId );
                     }
                 });
 
     }
 
-    public Flux<Role> getRolesByCompanyId(Long companyId) {
-
-        return userRoleRepository.findAllByCompanyId(companyId)
-                .flatMap(userRole -> roleService.getRoleById(String.valueOf(userRole.getRoleId())));
-
-    }
 }

@@ -7,7 +7,8 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface RolePermissionRepository extends ReactiveCrudRepository<RolePermission, Long> {
-    Mono<RolePermission> findByRoleId(Long roleId);
 
     Flux<RolePermission> findAllByRoleId(Long roleIds);
+
+    Flux<Object> deleteAllByRoleId(Long roleId);
 }

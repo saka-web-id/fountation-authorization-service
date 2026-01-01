@@ -8,6 +8,10 @@ import java.util.List;
 
 public class RolePermissionDTO {
 
+    public RolePermissionDTO() {
+
+    }
+
     public RolePermissionDTO(Role role, List<PermissionDTO> permissions) {
         this.roleId = role.getId();
         this.roleName = role.getName().name();

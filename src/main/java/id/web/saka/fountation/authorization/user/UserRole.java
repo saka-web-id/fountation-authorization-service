@@ -12,9 +12,6 @@ public class UserRole {
     @Column("user_id")
     private Long userId;
 
-    @Column("company_id")
-    private Long companyId;
-
     @Column("role_id")
     private Long roleId;
 
@@ -24,14 +21,6 @@ public class UserRole {
 
     public void setUserId(Long userId) {
         this.userId = userId;
-    }
-
-    public Long getCompanyId() {
-        return companyId;
-    }
-
-    public void setCompanyId(Long companyId) {
-        this.companyId = companyId;
     }
 
     public Long getRoleId() {
