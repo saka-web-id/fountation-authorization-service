@@ -22,10 +22,10 @@ public class CompanyRoleController {
         this.companyRoleService = companyRoleService;
     }
 
-    @GetMapping("/authorization/company/role/list/{companyId}")
-    public Flux<RoleDTO> getAllRolesByCompanyId(@PathVariable Long companyId) {
-        logger.info("Fetching all roles for companyId: " + companyId);
-        return companyRoleService.getAllRolesByCompanyId(companyId);
+    @GetMapping("/authorization/company/role/list/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}")
+    public Flux<RoleDTO> getAllRolesByCompanyId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId) {
+        logger.info("Fetching all roles for companyId: " + valueCompanyId);
+        return companyRoleService.getAllRolesByCompanyId(valueCompanyId);
     }
 
 }

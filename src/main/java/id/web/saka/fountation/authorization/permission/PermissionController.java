@@ -21,8 +21,8 @@ public class PermissionController {
     }
 
 
-    @GetMapping("/authorization/permission/list")
-    public Flux<PermissionDTO> getAllPermissions() {
+    @GetMapping("/authorization/permission/list/companyId/{companyId}/userId/{userId}")
+    public Flux<PermissionDTO> getAllPermissions(@PathVariable Long companyId, @PathVariable Long userId ) {
         return permissionService.findAll();
     }
 

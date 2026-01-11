@@ -5,6 +5,8 @@ import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
+import id.web.saka.fountation.authorization.user.role.UserRole;
+import id.web.saka.fountation.authorization.user.role.UserRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,16 +31,20 @@ public class RolePermissionService {
 
     private final CompanyRoleService companyRoleService;
 
+    private final UserRoleService userRoleService;
+
     public RolePermissionService(RolePermissionRepository rolePermissionRepository,
                                  RoleService roleService,
                                  RoleMapper roleMapper,
                                  PermissionService permissionService,
-                                 CompanyRoleService companyRoleService) {
+                                 CompanyRoleService companyRoleService,
+                                 UserRoleService userRoleService) {
         this.rolePermissionRepository = rolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
         this.permissionService = permissionService;
         this.companyRoleService = companyRoleService;
+        this.userRoleService = userRoleService;
     }
 
     public Flux<PermissionDTO> getPermissionsByRoleId(Long roleId) {
@@ -64,6 +70,18 @@ public class RolePermissionService {
                                 .collectList()
                                 .map(permissionDTOS -> new RolePermissionDTO(role, permissionDTOS)));
     }
+
+
+    public Mono<RolePermissionDTO> getRolePermissionsByCompanyIdAndUserId(Long companyId, Long userId) {
+
+        return userRoleService.getRoleByUserIdandCompanyId(userId, companyId)
+                .flatMap(role ->
+                        getPermissionsForRole(companyId, role.getId())
+                                .collectList()
+                                .map(permissionDTOS -> new RolePermissionDTO(role, permissionDTOS)));
+
+    }
+
 
     public Mono<RolePermissionDTO> updateRolePermissions(Long roleId, RolePermissionDTO rolePermissionDTO) {
         log.info("updateRolePermissions|roleId:{}|rolePermissionDTO:{}|START", roleId, rolePermissionDTO);

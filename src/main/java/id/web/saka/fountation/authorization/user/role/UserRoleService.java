@@ -1,4 +1,4 @@
-package id.web.saka.fountation.authorization.user;
+package id.web.saka.fountation.authorization.user.role;
 
 import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.role.RoleMapper;
@@ -24,7 +24,20 @@ public class UserRoleService {
         this.roleMapper = roleMapper;
     }
 
-    public Mono<Role> getRoleByUserId(Long userId) {
+    public Mono<Role> getRoleByUserIdandCompanyId(Long userId, Long companyId) {
+        return userRoleRepository.findByUserIdAndCompanyId(userId, companyId)
+                .flatMap(userRole -> roleService.getRoleById(userRole.getRoleId()))
+                .doOnNext(role -> {
+                    if (role == null) {
+                        throw new RuntimeException("Role not found for userId: " + userId );
+                    } else {
+                        log.info("Found role: " + role.toString() + " for userId: " + userId );
+                    }
+                });
+
+    }
+
+    /*public Mono<Role> getRoleByUserId(Long userId) {
 
         return userRoleRepository.findByUserId(userId)
                 .flatMap(userRole -> roleService.getRoleById(userRole.getRoleId()))
@@ -36,6 +49,6 @@ public class UserRoleService {
                     }
                 });
 
-    }
+    }*/
 
 }
