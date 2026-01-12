@@ -1,15 +1,8 @@
 package id.web.saka.fountation.authorization.permission;
 
-import id.web.saka.fountation.authorization.role.permission.RolePermission;
-import id.web.saka.fountation.authorization.role.permission.RolePermissionService;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class PermissionService {

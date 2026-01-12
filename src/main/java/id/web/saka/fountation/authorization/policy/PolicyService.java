@@ -1,6 +1,5 @@
 package id.web.saka.fountation.authorization.policy;
 
-import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.role.permission.RolePermissionService;
 import id.web.saka.fountation.authorization.user.UserService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
@@ -29,33 +28,35 @@ public class PolicyService {
 
 
     public Mono<PolicyResponseDTO> evaluate(Jwt jwt, Long userId, Long companyId, PolicyRequestDTO request) {
-        logger.info("evaluate|request:{}", request.toString());
+        logger.info("evaluate|request:{}", request);
 
         Mono<Long> userIdDecision = userId != null
                 ? Mono.just(userId)
                 : userService.getUserIdByEmail(jwt.getClaimAsString("https://example.com/email"));
 
         return userIdDecision.flatMap(uid ->
-                userRoleService.getRoleByUserIdandCompanyId(uid, companyId)
-                        .flatMap(userRole ->
-                                rolePermissionService.getPermissionsByRoleId(userRole.getId())
-                                        .map(PermissionDTO::getName) // extract action from each PermissionDTO
-                                        .filter(action -> action.equalsIgnoreCase(request.action())) // check match
-                                        .hasElements() // returns Mono<Boolean>
-                                        .map(hasPermission -> {
-
-                                            //TODO For testing purpose all is allowed
-                                            logger.info("evaluate result|request:{}|hasPermission:{}", request.toString(), hasPermission);
-                                            return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
-                                            /*if (hasPermission) {
-                                                return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
-                                            } else {
-                                                return new PolicyResponseDTO(false, "Denied: action not permitted by role " + userRole.getName());
-                                            }*/
-                                        })
+            userRoleService.getRoleByUserIdandCompanyId(uid, companyId)
+                .flatMap(userRole ->
+                    rolePermissionService.getPermissionsByRoleId(userRole.getId())
+                            .doOnNext(permissionDTO ->
+                                    logger.info("Fetched permission DTO for request {}: {}", request, permissionDTO)
+                            )
+                            .filter(permissionDTO ->
+                            request.action().equalsIgnoreCase(permissionDTO.getAction()) &&
+                                    request.resource().toLowerCase().startsWith(permissionDTO.getResource().toLowerCase())
                         )
+                        .next() // returns Mono<PermissionDTO> with the first match
+                        .map(permissionDTO -> {
+                            logger.info("Matched permission for role {}: {}", request, permissionDTO);
+
+                            return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
+                        })
+                        .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: no matching permission for role " + userRole.getName()))
+                )
         );
     }
+
+
 
 
 
