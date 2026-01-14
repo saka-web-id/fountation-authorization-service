@@ -37,4 +37,30 @@ public class UserRole {
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
+
+    @Override
+    public String toString() {
+        return "UserRole{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", companyId=" + companyId +
+                ", roleId=" + roleId +
+                '}';
+    }
 }

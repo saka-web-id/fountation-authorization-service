@@ -37,6 +37,17 @@ public class UserRoleService {
 
     }
 
+    public Mono<UserRole> updateUserRoles(Long companyId, UserRole payloadDTO) {
+
+        return userRoleRepository.save(payloadDTO)
+                .doOnNext(savedUserRole -> log.info("Updated UserRole: {}", savedUserRole));
+    }
+
+    public Mono<UserRole> addUserRole(Long companyId, Long userId, UserRole payloadDTO) {
+        return userRoleRepository.save(payloadDTO)
+                .doOnNext(savedUserRole -> log.info("Added UserRole: {}", savedUserRole));
+    }
+
     /*public Mono<Role> getRoleByUserId(Long userId) {
 
         return userRoleRepository.findByUserId(userId)
