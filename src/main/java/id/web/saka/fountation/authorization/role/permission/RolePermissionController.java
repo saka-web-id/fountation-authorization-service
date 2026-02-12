@@ -17,7 +17,7 @@ public class RolePermissionController {
     public RolePermissionController(RolePermissionService rolePermissionService) {
         this.rolePermissionService = rolePermissionService;
     }
-
+/*
     @GetMapping("/authorization/role/permission/detail/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}/valueRoleId/{roleId}")
     public Mono<RolePermissionDTO> getRolePermissionsByRoleId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId, @PathVariable Long roleId) {
         return rolePermissionService.getRolePermissionsByRoleId(valueCompanyId, roleId);
@@ -54,6 +54,6 @@ public class RolePermissionController {
                 .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
-    }
+    }*/
 
 }

@@ -1,5 +1,7 @@
 package id.web.saka.fountation.authorization.company;
 
+import id.web.saka.fountation.authorization.organization.company.CompanyDTO;
+import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.role.RoleDTO;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
@@ -45,5 +47,21 @@ public class CompanyRoleService {
     public Mono<CompanyRole> saveCompanyRole(Long companyId, RoleDTO savedRoled) {
 
         return companyRoleRepository.save(new CompanyRole(companyId, savedRoled.getId()));
+    }
+
+    public Mono<CompanyRole> createDefaultRolesForNewCompany(CompanyDTO company) {
+        return Flux.fromArray(Role.RoleName.values())
+                // exclude SUPER_ADMIN
+                .filter(role -> role != Role.RoleName.SUPER_ADMIN)
+                .flatMap(role -> roleService.getRoleByName(role)
+                        .flatMap(roleEntity -> {
+                            CompanyRole companyRole = new CompanyRole(company.id(), roleEntity.getId());
+                            return companyRoleRepository.save(companyRole)
+                                    .doOnNext(saved -> logger.info("Saved CompanyRole: {}", saved))
+                                    // only emit downstream if ADMIN
+                                    .filter(saved -> role == Role.RoleName.ADMIN);
+                        })
+                )
+                .next(); // returns Mono<CompanyRole> for ADMIN only
     }
 }

@@ -25,7 +25,8 @@ public class AuthorizationFilter implements WebFilter {
 
     // Define excluded paths (prefixes or exact matches)
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/api/v0/authorization/policy/check"
+            "/api/v0/authorization/policy/check",
+            "/api/v0/authorization/user/registration"
     );
 
 

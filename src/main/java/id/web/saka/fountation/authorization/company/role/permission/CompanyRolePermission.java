@@ -1,29 +1,15 @@
-package id.web.saka.fountation.authorization.user.role;
+package id.web.saka.fountation.authorization.company.role.permission;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-
-@Table(value = "user_role")
-public class UserRole {
-
-    public UserRole() {
-    }
-
-    public UserRole(Long userId, Long companyId, Long roleId) {
-        this.userId = userId;
-        this.companyId = companyId;
-        this.roleId = roleId;
-    }
+@Table(value = "company_role_permission")
+public class CompanyRolePermission {
 
     @Id
     @Column("id")
     private Long id;
-
-
-    @Column("user_id")
-    private Long userId;
 
     @Column("company_id")
     private Long companyId;
@@ -31,21 +17,8 @@ public class UserRole {
     @Column("role_id")
     private Long roleId;
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public Long getRoleId() {
-        return roleId;
-    }
-
-    public void setRoleId(Long roleId) {
-        this.roleId = roleId;
-    }
+    @Column("permission_id")
+    private Long permissionId;
 
     public Long getId() {
         return id;
@@ -63,13 +36,29 @@ public class UserRole {
         this.companyId = companyId;
     }
 
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
+    }
+
+    public Long getPermissionId() {
+        return permissionId;
+    }
+
+    public void setPermissionId(Long permissionId) {
+        this.permissionId = permissionId;
+    }
+
     @Override
     public String toString() {
-        return "UserRole{" +
+        return "CompanyRolePermission{" +
                 "id=" + id +
-                ", userId=" + userId +
                 ", companyId=" + companyId +
                 ", roleId=" + roleId +
+                ", permissionId=" + permissionId +
                 '}';
     }
 }

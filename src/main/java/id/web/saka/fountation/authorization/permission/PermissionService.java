@@ -26,5 +26,4 @@ public class PermissionService {
                 .map(permissionMapper::toDTO);
     }
 
-
 }

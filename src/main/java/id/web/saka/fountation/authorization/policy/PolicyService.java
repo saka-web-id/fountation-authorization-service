@@ -1,5 +1,7 @@
 package id.web.saka.fountation.authorization.policy;
 
+import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermission;
+import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermissionService;
 import id.web.saka.fountation.authorization.role.permission.RolePermissionService;
 import id.web.saka.fountation.authorization.user.UserService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
@@ -16,11 +18,11 @@ public class PolicyService {
 
     private final UserService userService;
 
-    private final RolePermissionService rolePermissionService;
+    private final CompanyRolePermissionService rolePermissionService;
 
     private final UserRoleService userRoleService;
 
-    public PolicyService(UserService userService, UserRoleService userRoleService, RolePermissionService rolePermissionService) {
+    public PolicyService(UserService userService, UserRoleService userRoleService, CompanyRolePermissionService rolePermissionService) {
         this.userService = userService;
         this.userRoleService = userRoleService;
         this.rolePermissionService = rolePermissionService;
@@ -37,13 +39,13 @@ public class PolicyService {
         return userIdDecision.flatMap(uid ->
             userRoleService.getRoleByUserIdandCompanyId(uid, companyId)
                 .flatMap(userRole ->
-                    rolePermissionService.getPermissionsByRoleId(userRole.getId())
+                    rolePermissionService.getPermissionsByCompanyIdRoleId(companyId, userRole.getId())
                             .doOnNext(permissionDTO ->
                                     logger.info("Fetched permission DTO for request {}: {}", request, permissionDTO)
                             )
                             .filter(permissionDTO ->
-                            request.action().equalsIgnoreCase(permissionDTO.getAction()) &&
-                                    request.resource().toLowerCase().startsWith(permissionDTO.getResource().toLowerCase())
+                            request.action().equalsIgnoreCase(permissionDTO.action()) &&
+                                    request.resource().toLowerCase().startsWith(permissionDTO.resource().toLowerCase())
                         )
                         .next() // returns Mono<PermissionDTO> with the first match
                         .map(permissionDTO -> {

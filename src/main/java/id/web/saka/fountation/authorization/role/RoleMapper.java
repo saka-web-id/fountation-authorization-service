@@ -1,5 +1,6 @@
 package id.web.saka.fountation.authorization.role;
 
+import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermissionDTO;
 import id.web.saka.fountation.authorization.role.permission.RolePermissionDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -19,6 +20,11 @@ public interface RoleMapper {
     @Mapping(source = "roleName", target = "name")
     @Mapping(source = "roleDescription", target = "description")
     Role toRequestEntity(RolePermissionDTO dto);
+
+    @Mapping(source = "roleId", target = "id")
+    @Mapping(source = "roleName", target = "name")
+    @Mapping(source = "roleDescription", target = "description")
+    Role toRequestEntity(CompanyRolePermissionDTO dto);
 
     default ZonedDateTime toOffset(Instant instant) {
         return instant == null ? null :

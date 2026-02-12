@@ -1,12 +1,10 @@
-package id.web.saka.fountation.authorization.role.permission;
+package id.web.saka.fountation.authorization.company.role.permission;
 
 import id.web.saka.fountation.authorization.company.CompanyRoleService;
 import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
-import id.web.saka.fountation.authorization.user.role.UserRole;
-import id.web.saka.fountation.authorization.user.role.UserRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,39 +15,35 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class RolePermissionService {
+public class CompanyRolePermissionService {
 
-    Logger log = LoggerFactory.getLogger(RolePermissionService.class);
+    Logger log = LoggerFactory.getLogger(CompanyRolePermissionService.class);
 
-    private final RolePermissionRepository rolePermissionRepository;
+    private final CompanyRolePermissionRepository companyRolePermissionRepository;
 
     private final PermissionService permissionService;
 
-    private final RoleService  roleService;
+    private final RoleService roleService;
 
     private final RoleMapper roleMapper;
 
     private final CompanyRoleService companyRoleService;
 
-    private final UserRoleService userRoleService;
-
-    public RolePermissionService(RolePermissionRepository rolePermissionRepository,
+    public CompanyRolePermissionService(CompanyRolePermissionRepository companyRolePermissionRepository,
                                  RoleService roleService,
                                  RoleMapper roleMapper,
                                  PermissionService permissionService,
-                                 CompanyRoleService companyRoleService,
-                                 UserRoleService userRoleService) {
-        this.rolePermissionRepository = rolePermissionRepository;
+                                 CompanyRoleService companyRoleService) {
+        this.companyRolePermissionRepository = companyRolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
         this.permissionService = permissionService;
         this.companyRoleService = companyRoleService;
-        this.userRoleService = userRoleService;
     }
 
-    public Flux<PermissionDTO> getPermissionsByRoleId(Long roleId) {
+    public Flux<PermissionDTO> getPermissionsByCompanyIdRoleId(Long companyId, Long roleId) {
 
-        return rolePermissionRepository.findAllByRoleId(roleId)
+        return companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
                 .flatMap(rolePermission ->
                         permissionService.getPermissionById(rolePermission.getPermissionId())
                 ).doOnNext(permissionDTO ->
@@ -61,53 +55,48 @@ public class RolePermissionService {
 
     }
 
-    public Mono<RolePermissionDTO> getRolePermissionsByRoleId(Long companyId, Long roleId) {
+    public Mono<CompanyRolePermissionDTO> getCompanyRolePermissionsByCompanyRoleId(Long companyId, Long roleId) {
         log.info("getRolePermissionByRoleId: {}", roleId);
 
-        return roleService.getRoleById(roleId)
-                .flatMap(role ->
-                        getPermissionsForRole(companyId, roleId)
-                                .collectList()
-                                .map(permissionDTOS -> new RolePermissionDTO(role, permissionDTOS)));
+        return roleService.getRoleById(roleId).flatMap(role -> {
+            return companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
+                    .collectList()
+                    .flatMap(companyRolePermissions ->
+                            getPermissionsForRole(companyId, roleId)
+                                    .collectList()
+                                    .map(permissionDTOS ->
+                                            new CompanyRolePermissionDTO(
+                                                    roleId,
+                                                    companyId,
+                                                    role.getName().toString(), // fill in role name if needed
+                                                    role.getDescription(), // fill in description if needed
+                                                    permissionDTOS
+                                            )
+                                    )
+                    );
+        });
+
+
     }
 
-
-    public Mono<RolePermissionDTO> getRolePermissionsByCompanyIdAndUserId(Long companyId, Long userId) {
-
-        return userRoleService.getRoleByUserIdandCompanyId(userId, companyId)
-                .flatMap(role ->
-                        getPermissionsForRole(companyId, role.getId())
-                                .collectList()
-                                .map(permissionDTOS -> new RolePermissionDTO(role, permissionDTOS)));
-
-    }
-
-
-    public Mono<RolePermissionDTO> updateRolePermissions(Long roleId, RolePermissionDTO rolePermissionDTO) {
+    public Mono<CompanyRolePermissionDTO> updateRolePermissions(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
         log.info("updateRolePermissions|roleId:{}|rolePermissionDTO:{}|START", roleId, rolePermissionDTO);
 
         return roleService.saveRole(roleMapper.toRequestEntity(rolePermissionDTO))
-                .flatMap(savedRole -> saveRolePermission(roleId, rolePermissionDTO));
+                .flatMap(savedRole -> saveRolePermission(companyId, roleId, rolePermissionDTO));
     }
 
-    public Mono<RolePermissionDTO> addRolePermissions(Long companyId, RolePermissionDTO rolePermissionDTOMono) {
-        return roleService.saveRole(roleMapper.toRequestEntity(rolePermissionDTOMono))
-                        .flatMap(savedRole ->
-                                companyRoleService.saveCompanyRole(companyId, savedRole)
-                                        .flatMap(savedCompanyRole -> saveRolePermission(savedCompanyRole.getRoleId(), rolePermissionDTOMono))
-                        );
-    }
-
-    private Mono<RolePermissionDTO> saveRolePermission(Long roleId, RolePermissionDTO rolePermissionDTO) {
-        return rolePermissionRepository.deleteAllByRoleId(roleId)
+    private Mono<CompanyRolePermissionDTO> saveRolePermission(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
+        return companyRolePermissionRepository.deleteAllByRoleId(roleId)
                 .then(
-                        Flux.fromIterable(rolePermissionDTO.getPermissions())
+                        Flux.fromIterable(rolePermissionDTO.permissions())
                                 .flatMap(permissionDTO -> {
                                     if (permissionDTO.isAssigned()) {
-                                        RolePermission rolePermission = new RolePermission();
-                                        rolePermission.setRoleId(roleId);
-                                        rolePermission.setPermissionId(permissionDTO.id());
-                                        return rolePermissionRepository.save(rolePermission);
+                                        CompanyRolePermission companyRolePermission = new CompanyRolePermission();
+                                        companyRolePermission.setRoleId(roleId);
+                                        companyRolePermission.setCompanyId(companyId);
+                                        companyRolePermission.setPermissionId(permissionDTO.id());
+                                        return companyRolePermissionRepository.save(companyRolePermission);
                                     } else {
                                         return Mono.empty();
                                     }
@@ -120,14 +109,14 @@ public class RolePermissionService {
 
     private Flux<PermissionDTO> getPermissionsForRole(Long companyId, Long roleId) {
         // Step 1: collect assigned permission IDs into a Set
-        Mono<Set<Long>> assignedIdsMono = getPermissionsByRoleId(roleId)
+        Mono<Set<Long>> assignedIdsMono = getPermissionsByCompanyIdRoleId(companyId, roleId)
                 .map(PermissionDTO::id)
                 .collect(Collectors.toSet());
 
         // Step 2: map all permissions with flag and ensure uniqueness
         return assignedIdsMono.flatMapMany(assignedIds ->
                 companyRoleService.getAllRolesByCompanyId(companyId)
-                        .flatMap(roleDTO -> getPermissionsByRoleId(roleDTO.getId()))
+                        .flatMap(roleDTO -> getPermissionsByCompanyIdRoleId(companyId, roleDTO.getId()))
                         .distinct(PermissionDTO::id) // Ensure unique PermissionDTOs based on ID
                         .map(permissionDTO ->
                                 new PermissionDTO(
@@ -143,15 +132,16 @@ public class RolePermissionService {
         );
     }
 
-    public Mono<Void> setupPermissionsForRole(Long roleId) {
+    public Mono<Void> setupPermissionsForRole(Long companyId, Long roleId) {
         //TODO setup permissions for role except for permissions with flag is_super_admin is true
         return permissionService.findAll()
                 .filter(permissionDTO -> !permissionDTO.isSuperAdmin())
                 .flatMap(permissionDTO -> {
-                    RolePermission rolePermission = new RolePermission();
+                    CompanyRolePermission rolePermission = new CompanyRolePermission();
                     rolePermission.setRoleId(roleId);
+                    rolePermission.setCompanyId(companyId);
                     rolePermission.setPermissionId(permissionDTO.id());
-                    return rolePermissionRepository.save(rolePermission);
+                    return companyRolePermissionRepository.save(rolePermission);
                 })
                 .then();
     }

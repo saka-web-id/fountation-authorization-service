@@ -7,4 +7,5 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface RoleRepository extends ReactiveCrudRepository<Role, Long> {
 
+    Flux<Role> findByName(Role.RoleName role);
 }

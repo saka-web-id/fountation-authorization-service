@@ -14,6 +14,9 @@ public class Permission {
     @Column("name")
     private String name;
 
+    @Column("is_super_admin")
+    private boolean isSuperAdmin;
+
     @Column("resource")
     private String resource;
 
@@ -37,6 +40,14 @@ public class Permission {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isSuperAdmin() {
+        return isSuperAdmin;
+    }
+
+    public void setSuperAdmin(boolean superAdmin) {
+        isSuperAdmin = superAdmin;
     }
 
     public String getResource() {
@@ -63,11 +74,13 @@ public class Permission {
         this.description = description;
     }
 
+
     @Override
     public String toString() {
         return "Permission{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", isSuperAdmin=" + isSuperAdmin +
                 ", resource='" + resource + '\'' +
                 ", action='" + action + '\'' +
                 ", description='" + description + '\'' +
