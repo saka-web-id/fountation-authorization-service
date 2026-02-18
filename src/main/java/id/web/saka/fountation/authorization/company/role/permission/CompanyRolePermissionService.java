@@ -5,12 +5,15 @@ import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
+import id.web.saka.fountation.authorization.util.Env;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,16 +32,24 @@ public class CompanyRolePermissionService {
 
     private final CompanyRoleService companyRoleService;
 
+    private final ReactiveRedisTemplate<String, CompanyRolePermissionDTO> redisTemplateCompanyRolePermissionDTO;
+
+    private final Env env;
+
     public CompanyRolePermissionService(CompanyRolePermissionRepository companyRolePermissionRepository,
                                  RoleService roleService,
                                  RoleMapper roleMapper,
                                  PermissionService permissionService,
-                                 CompanyRoleService companyRoleService) {
+                                 CompanyRoleService companyRoleService,
+                                 ReactiveRedisTemplate<String, CompanyRolePermissionDTO> redisTemplateCompanyRolePermissionDTO,
+                                 Env env) {
         this.companyRolePermissionRepository = companyRolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
         this.permissionService = permissionService;
         this.companyRoleService = companyRoleService;
+        this.redisTemplateCompanyRolePermissionDTO = redisTemplateCompanyRolePermissionDTO;
+        this.env = env;
     }
 
     public Flux<PermissionDTO> getPermissionsByCompanyIdRoleId(Long companyId, Long roleId) {
@@ -58,32 +69,50 @@ public class CompanyRolePermissionService {
     public Mono<CompanyRolePermissionDTO> getCompanyRolePermissionsByCompanyRoleId(Long companyId, Long roleId) {
         log.info("getRolePermissionByRoleId: {}", roleId);
 
-        return roleService.getRoleById(roleId).flatMap(role -> {
-            return companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
-                    .collectList()
-                    .flatMap(companyRolePermissions ->
-                            getPermissionsForRole(companyId, roleId)
-                                    .collectList()
-                                    .map(permissionDTOS ->
-                                            new CompanyRolePermissionDTO(
-                                                    roleId,
-                                                    companyId,
-                                                    role.getName().toString(), // fill in role name if needed
-                                                    role.getDescription(), // fill in description if needed
-                                                    permissionDTOS
-                                            )
-                                    )
-                    );
-        });
-
-
+        return redisTemplateCompanyRolePermissionDTO.opsForValue().get(buildCacheKey(companyId, roleId))
+                .map(obj -> (CompanyRolePermissionDTO) obj)   // cast here
+                .onErrorResume(e -> {
+                    log.warn("Redis unavailable, fallback to DB: {}", e.getMessage());
+                    return Mono.empty();
+                })
+                .switchIfEmpty(
+                        roleService.getRoleById(roleId).flatMap(role ->
+                                companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
+                                        .collectList()
+                                        .flatMap(companyRolePermissions ->
+                                                getPermissionsForRole(companyId, roleId)
+                                                        .collectList()
+                                                        .flatMap(permissionDTOS ->
+                                                                cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), new CompanyRolePermissionDTO(
+                                                                        roleId,
+                                                                        companyId,
+                                                                        role.getName().toString(),
+                                                                        role.getDescription(),
+                                                                        permissionDTOS
+                                                                ))
+                                                        )
+                                        )
+                        )
+                );
     }
 
     public Mono<CompanyRolePermissionDTO> updateRolePermissions(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
         log.info("updateRolePermissions|roleId:{}|rolePermissionDTO:{}|START", roleId, rolePermissionDTO);
 
         return roleService.saveRole(roleMapper.toRequestEntity(rolePermissionDTO))
-                .flatMap(savedRole -> saveRolePermission(companyId, roleId, rolePermissionDTO));
+                .flatMap(savedRole -> saveRolePermission(companyId, roleId, rolePermissionDTO))
+                .flatMap(dto -> {
+                    // chain cache write, but return dto immediately
+                    return cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto)
+                            .onErrorResume(err -> {
+                                log.warn("Failed to cache in Redis: {}", err.getMessage());
+                                return Mono.empty(); // ignore cache failure
+                            })
+                            .thenReturn(dto); // return original dto regardless
+                });
+
+
+
     }
 
     private Mono<CompanyRolePermissionDTO> saveRolePermission(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
@@ -103,6 +132,13 @@ public class CompanyRolePermissionService {
                                 })
                                 .collectList()
                                 .thenReturn(rolePermissionDTO) // ✅ return the original DTO without blocking
+                )
+                .flatMap(dto ->
+                        cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto)
+                                .onErrorResume(err -> {
+                                    log.warn("Failed to cache in Redis: {}", err.getMessage());
+                                    return Mono.just(dto); // fallback to original DTO if cache fails
+                                })
                 );
     }
 
@@ -144,5 +180,21 @@ public class CompanyRolePermissionService {
                     return companyRolePermissionRepository.save(rolePermission);
                 })
                 .then();
+    }
+
+    private Mono<CompanyRolePermissionDTO> cacheCompanyRolePermissionDTO(String key, CompanyRolePermissionDTO dto) {
+        log.info("Redis cache user {} with dto {} ", key, dto.toString() );
+
+        return redisTemplateCompanyRolePermissionDTO.opsForValue()
+                .set(key, dto, Duration.ofMinutes(env.getFountationServiceRedisStoreDurationInMinutes()))
+                .onErrorResume(err -> {
+                    log.warn("Failed to cache in Redis: {}", err.getMessage());
+                    return Mono.empty();
+                })
+                .thenReturn(dto);
+    }
+
+    private String buildCacheKey(Long companyId, Long roleId) {
+        return "companyRolePermissionDTO:companyId:" + companyId + ":roleId:" + roleId;
     }
 }

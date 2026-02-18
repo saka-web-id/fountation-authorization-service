@@ -9,6 +9,9 @@ public class Env {
     @Value("${fountation.service.users.url}")
     private String fountationServiceUserUrl;
 
+    @Value("${fountation.service.redis.store.duration.minutes}")
+    private int fountationServiceRedisStoreDurationInMinutes;
+
     @Value("${spring.security.oauth2.client.registration.internal-service.client-id}")
     private String clientRegistrationInternalServiceClientId;
 
@@ -31,6 +34,14 @@ public class Env {
 
     public void setFountationServiceUserUrl(String fountationServiceUserUrl) {
         this.fountationServiceUserUrl = fountationServiceUserUrl;
+    }
+
+    public int getFountationServiceRedisStoreDurationInMinutes() {
+        return fountationServiceRedisStoreDurationInMinutes;
+    }
+
+    public void setFountationServiceRedisStoreDurationInMinutes(int fountationServiceRedisStoreDurationInMinutes) {
+        this.fountationServiceRedisStoreDurationInMinutes = fountationServiceRedisStoreDurationInMinutes;
     }
 
     public String getClientRegistrationInternalServiceClientId() {

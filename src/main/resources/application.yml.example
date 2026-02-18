@@ -45,12 +45,26 @@ spring:
             - https://XXXXXXXXXXXXXXXXXXXXXXXX/
           issuer-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
           jwk-set-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
+  data:
+    redis:
+      host: XX.XX.XX.XX
+      port: XXXX
+      database: XX
+      password: XXXX
 eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_URI:http://XXXXXXXXXXXXXXXXXXXXXXXX}
   instance:
     preferIpAddress: true
+fountation:
+  service:
+    users:
+      url: lb://fountation-user-service
+    redis:
+      store:
+        duration:
+          minutes: 10
 logging:
     level:
         org:
