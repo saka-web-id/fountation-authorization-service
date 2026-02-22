@@ -12,6 +12,12 @@ public class Env {
     @Value("${fountation.service.redis.store.duration.minutes}")
     private int fountationServiceRedisStoreDurationInMinutes;
 
+    @Value("${fountation.service.ui.url}")
+    private String fountationServiceUiUrl;
+
+    @Value("${fountation.service.security.jwt.audience}")
+    private String fountationServiceSecurityJwtAudience;
+
     @Value("${spring.security.oauth2.client.registration.internal-service.client-id}")
     private String clientRegistrationInternalServiceClientId;
 
@@ -27,7 +33,6 @@ public class Env {
     @Value("${spring.security.oauth2.client.provider.auth0.token-uri}")
     private String clientRegistrationInternalServiceTokenUri;
 
-
     public String getFountationServiceUserUrl() {
         return fountationServiceUserUrl;
     }
@@ -42,6 +47,22 @@ public class Env {
 
     public void setFountationServiceRedisStoreDurationInMinutes(int fountationServiceRedisStoreDurationInMinutes) {
         this.fountationServiceRedisStoreDurationInMinutes = fountationServiceRedisStoreDurationInMinutes;
+    }
+
+    public String getFountationServiceUiUrl() {
+        return fountationServiceUiUrl;
+    }
+
+    public void setFountationServiceUiUrl(String fountationServiceUiUrl) {
+        this.fountationServiceUiUrl = fountationServiceUiUrl;
+    }
+
+    public String getFountationServiceSecurityJwtAudience() {
+        return fountationServiceSecurityJwtAudience;
+    }
+
+    public void setFountationServiceSecurityJwtAudience(String fountationServiceSecurityJwtAudience) {
+        this.fountationServiceSecurityJwtAudience = fountationServiceSecurityJwtAudience;
     }
 
     public String getClientRegistrationInternalServiceClientId() {
