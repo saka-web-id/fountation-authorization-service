@@ -6,6 +6,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -15,10 +16,14 @@ public class Config {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                // 1. Force stateless session management
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .authorizeExchange(
                         auth -> auth
-                                .pathMatchers("/api/v0/health").permitAll()
-                                .pathMatchers("/api/v0/authorization/user/registration").permitAll()
+                                .pathMatchers(
+                                        "/api/v0/health",
+                                        "/api/v0/authorization/user/registration"
+                                ).permitAll()
 
                 )
                 .authorizeExchange(auth -> auth.anyExchange().authenticated())

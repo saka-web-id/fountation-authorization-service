@@ -1,5 +1,5 @@
 # Use lightweight Java runtime
-FROM eclipse-temurin:17-jre-focal
+FROM eclipse-temurin:22-jre
 LABEL authors="Sakawijaya"
 
 WORKDIR /app

@@ -1,5 +1,6 @@
 server:
-  port: 0
+  #port: 0 # Use random port for local development to avoid conflicts. Eureka will register the actual port at runtime.
+  port: XXXX #--> Docker
   error:
     include-binding-errors: always
     include-message: always
@@ -56,11 +57,19 @@ eureka:
     serviceUrl:
       defaultZone: ${EUREKA_URI:http://XXXXXXXXXXXXXXXXXXXXXXXX}
   instance:
-    preferIpAddress: true
+        prefer-ip-address: false                       # Local setup forces Eureka to use IP instead of hostname
+        ip-address: XXXXXXXXXXXXX                      # Local setup forces Eureka to use IP instead of hostname
+        hostname: fountation-authorization-service     # use the Swarm DNS alias
+        non-secure-port: XXXX                          # internal container port
 fountation:
   service:
     users:
       url: lb://fountation-user-service
+    ui:
+      url: http://fountationui
+    security:
+      jwt:
+        audience: https://myproject.local/api
     redis:
       store:
         duration:
