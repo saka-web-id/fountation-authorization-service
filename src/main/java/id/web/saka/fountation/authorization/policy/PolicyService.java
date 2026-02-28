@@ -1,8 +1,6 @@
 package id.web.saka.fountation.authorization.policy;
 
-import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermission;
 import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermissionService;
-import id.web.saka.fountation.authorization.role.permission.RolePermissionService;
 import id.web.saka.fountation.authorization.user.UserService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
 import org.slf4j.Logger;

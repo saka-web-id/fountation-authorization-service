@@ -52,6 +52,13 @@ spring:
       port: XXXX
       database: XX
       password: XXXX
+grpc:
+  server:
+    port: XXXXX
+  client:
+      fountation-account-service:
+        address: 'static://fountation-account-service:XXXXX'
+        negotiation-type: plaintext
 eureka:
   client:
     serviceUrl:

@@ -12,9 +12,6 @@ public class UserDTO {
     @JsonProperty("userEmail")
     private String email;
 
-    @JsonProperty("userPasswordHash")
-    private String passwordHash;
-
     @JsonProperty("userName")
     private String name;
 
@@ -56,14 +53,6 @@ public class UserDTO {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
     }
 
     public String getName() {
@@ -143,7 +132,6 @@ public class UserDTO {
         return "UserDTO{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
-                ", passwordHash='" + passwordHash + '\'' +
                 ", name='" + name + '\'' +
                 ", phone='" + phone + '\'' +
                 ", status='" + status + '\'' +

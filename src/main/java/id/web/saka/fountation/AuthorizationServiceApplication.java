@@ -1,4 +1,4 @@
-package id.web.saka.fountation.authorization;
+package id.web.saka.fountation;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

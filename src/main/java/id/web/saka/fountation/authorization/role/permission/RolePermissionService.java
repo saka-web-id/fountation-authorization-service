@@ -5,7 +5,6 @@ import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
-import id.web.saka.fountation.authorization.user.role.UserRole;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
