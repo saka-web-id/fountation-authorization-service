@@ -16,13 +16,13 @@ public interface UserMapper {
 
     @Mapping(target = "lastLoginAt", source = "lastLoginAt", qualifiedByName = "timestampToZonedDateTime")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "timestampToZonedDateTime")
-    @Mapping(target = "updateAt", source = "updatedAt", qualifiedByName = "timestampToZonedDateTime")
+    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "timestampToZonedDateTime")
     @Mapping(target = "verified", source = "isVerified")
     UserDTO toDto(id.web.saka.fountation.user.UserProto proto);
 
     @Mapping(target = "lastLoginAt", source = "lastLoginAt", qualifiedByName = "zonedDateTimeToTimestamp")
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "zonedDateTimeToTimestamp")
-    @Mapping(target = "updatedAt", source = "updateAt", qualifiedByName = "zonedDateTimeToTimestamp")
+    @Mapping(target = "updatedAt", source = "updatedAt", qualifiedByName = "zonedDateTimeToTimestamp")
     @Mapping(target = "isVerified", source = "verified")
     id.web.saka.fountation.user.UserProto toProto(UserDTO dto);
 

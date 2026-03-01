@@ -1,7 +1,7 @@
 package id.web.saka.fountation.authorization.account;
 
+import id.web.saka.fountation.account.AccountProto;
 import com.google.protobuf.Timestamp;
-import id.web.saka.fountation.account.Account;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -18,12 +18,12 @@ public interface AccountMapper {
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "timestampToZonedDateTime")
     @Mapping(target = "membershipStartDate", source = "membershipStartDate", qualifiedByName = "timestampToZonedDateTime")
     @Mapping(target = "membershipEndDate", source = "membershipEndDate", qualifiedByName = "timestampToZonedDateTime")
-    AccountDTO toDto(Account.AccountProto proto);
+    AccountDTO toDto(AccountProto proto);
 
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "zonedDateTimeToTimestamp")
     @Mapping(target = "membershipStartDate", source = "membershipStartDate", qualifiedByName = "zonedDateTimeToTimestamp")
     @Mapping(target = "membershipEndDate", source = "membershipEndDate", qualifiedByName = "zonedDateTimeToTimestamp")
-    Account.AccountProto toProto(AccountDTO dto);
+    AccountProto toProto(AccountDTO dto);
 
     // --- Converters ---
 

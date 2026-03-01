@@ -31,7 +31,7 @@ public class UserDTO {
     private ZonedDateTime createdAt;
 
     @JsonProperty("userUpdatedAt")
-    private ZonedDateTime updateAt;
+    private ZonedDateTime updatedAt;
 
     @JsonProperty("userLeaderId")
     private Long leaderId;
@@ -103,12 +103,12 @@ public class UserDTO {
         this.createdAt = createdAt;
     }
 
-    public ZonedDateTime getUpdateAt() {
-        return updateAt;
+    public ZonedDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setUpdateAt(ZonedDateTime updateAt) {
-        this.updateAt = updateAt;
+    public void setUpdatedAt(ZonedDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public Long getLeaderId() {
@@ -138,7 +138,7 @@ public class UserDTO {
                 ", isVerified=" + isVerified +
                 ", lastLoginAt=" + lastLoginAt +
                 ", createdAt=" + createdAt +
-                ", updateAt=" + updateAt +
+                ", updatedAt=" + updatedAt +
                 ", leaderId=" + leaderId +
                 ", note='" + note + '\'' +
                 '}';
