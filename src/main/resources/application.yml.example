@@ -59,15 +59,7 @@ grpc:
       fountation-account-service:
         address: 'static://fountation-account-service:XXXXX'
         negotiation-type: plaintext
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: ${EUREKA_URI:http://XXXXXXXXXXXXXXXXXXXXXXXX}
-  instance:
-        prefer-ip-address: false                       # Local setup forces Eureka to use IP instead of hostname
-        ip-address: XXXXXXXXXXXXX                      # Local setup forces Eureka to use IP instead of hostname
-        hostname: fountation-authorization-service     # use the Swarm DNS alias
-        non-secure-port: XXXX                          # internal container port
+
 fountation:
   service:
     users:
