@@ -48,6 +48,12 @@
 			<version>1.0.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>id.web.saka.fountation</groupId>
+			<artifactId>fountation-config-service</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 		<!-- WebFlux -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
