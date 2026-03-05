@@ -26,4 +26,8 @@ public class PermissionService {
                 .map(permissionMapper::toDTO);
     }
 
+    public Mono<Integer> countAllPermissionByCompanyId(Long companyId, Long userId) {
+
+        return permissionRepository.count().map(Long::intValue);
+    }
 }
