@@ -8,19 +8,17 @@ import reactor.core.publisher.Mono;
 @Service
 public class UserService {
 
-    private final Mono<WebClient> webClientUser;
+    private final WebClient webClientUser;
 
-    public UserService(@Qualifier("webClientUser") Mono<WebClient> webClientConfig) {
+    public UserService(@Qualifier("webClientUser") WebClient webClientConfig) {
         this.webClientUser = webClientConfig;
     }
 
 
     public Mono<Long> getUserIdByEmail(String emailUser) {
-        return webClientUser.flatMap(webClient ->
-                webClient.get()
-                        .uri("/api/v0/user/detail/getIdByEmail/" + emailUser)
-                        .retrieve()
-                        .bodyToMono(Long.class)
-        );
+        return webClientUser.get()
+                .uri("/api/v0/user/detail/getIdByEmail/" + emailUser)
+                .retrieve()
+                .bodyToMono(Long.class);
     }
 }
