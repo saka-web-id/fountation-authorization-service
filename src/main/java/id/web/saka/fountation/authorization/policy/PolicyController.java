@@ -22,7 +22,7 @@ public class PolicyController {
         this.policyService = policyService;
     }
 
-    @PostMapping("/authorization/policy/check/{companyId}")
+    @PostMapping("/authorization/policy/check/companyId/{companyId}")
     public Mono<ResponseEntity<PolicyResponseDTO>> authorize(@AuthenticationPrincipal Jwt jwt, @RequestBody PolicyRequestDTO request, @PathVariable Long companyId) {
         logger.info("authorize|companyId:{}", companyId);
 
@@ -38,7 +38,7 @@ public class PolicyController {
     }
 
 
-    @PostMapping("/authorization/policy/check/{companyId}/{userId}")
+    @PostMapping("/authorization/policy/check/companyId/{companyId}/userId/{userId}")
     public Mono<ResponseEntity<PolicyResponseDTO>> authorize(@AuthenticationPrincipal Jwt jwt, @RequestBody PolicyRequestDTO request, @PathVariable Long companyId, @PathVariable Long userId) {
 
         return policyService.evaluate(jwt, userId, companyId, request)
