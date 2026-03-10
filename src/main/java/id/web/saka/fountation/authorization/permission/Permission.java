@@ -15,7 +15,7 @@ public class Permission {
     private String name;
 
     @Column("is_super_admin")
-    private boolean isSuperAdmin;
+    private boolean superAdmin;
 
     @Column("resource")
     private String resource;
@@ -43,11 +43,15 @@ public class Permission {
     }
 
     public boolean isSuperAdmin() {
-        return isSuperAdmin;
+        return superAdmin;
+    }
+
+    public boolean getSuperAdmin() {
+        return superAdmin;
     }
 
     public void setSuperAdmin(boolean superAdmin) {
-        isSuperAdmin = superAdmin;
+        this.superAdmin = superAdmin;
     }
 
     public String getResource() {
@@ -80,7 +84,7 @@ public class Permission {
         return "Permission{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", isSuperAdmin=" + isSuperAdmin +
+                ", superAdmin=" + superAdmin +
                 ", resource='" + resource + '\'' +
                 ", action='" + action + '\'' +
                 ", description='" + description + '\'' +

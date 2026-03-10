@@ -7,8 +7,20 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface PermissionMapper {
 
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "superAdmin", source = "superAdmin")
+    @Mapping(target = "resource", source = "resource")
+    @Mapping(target = "action", source = "action")
+    @Mapping(target = "description", source = "description")
     Permission toEntity(PermissionDTO dto);
 
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "superAdmin", source = "superAdmin")
+    @Mapping(target = "resource", source = "resource")
+    @Mapping(target = "action", source = "action")
+    @Mapping(target = "description", source = "description")
     PermissionDTO toDTO(Permission entity);
 
     @Mapping(target = "id", source = "id")

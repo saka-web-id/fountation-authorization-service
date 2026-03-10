@@ -158,7 +158,7 @@ public class CompanyRolePermissionService {
                                 new PermissionDTO(
                                         permissionDTO.id(),
                                         permissionDTO.name(),
-                                        permissionDTO.isSuperAdmin(),
+                                        permissionDTO.superAdmin(),
                                         permissionDTO.resource(),
                                         permissionDTO.action(),
                                         permissionDTO.description(),
@@ -171,7 +171,7 @@ public class CompanyRolePermissionService {
     public Mono<Void> setupPermissionsForRole(Long companyId, Long roleId) {
         //TODO setup permissions for role except for permissions with flag is_super_admin is true
         return permissionService.findAll()
-                .filter(permissionDTO -> !permissionDTO.isSuperAdmin())
+                .filter(permissionDTO -> !permissionDTO.superAdmin())
                 .flatMap(permissionDTO -> {
                     CompanyRolePermission rolePermission = new CompanyRolePermission();
                     rolePermission.setRoleId(roleId);

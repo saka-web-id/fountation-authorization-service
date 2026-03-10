@@ -2,10 +2,7 @@ package id.web.saka.fountation.authorization.permission;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,6 +24,24 @@ public class PermissionController {
         log.info("getAllPermissions: companyId={}, userId={}", companyId, userId);
 
         return permissionService.findAll();
+    }
+
+    @GetMapping("/authorization/permission/detail/companyId/{companyId}/userId/{userId}/valueId/{id}")
+    public Mono<PermissionDTO> getPermissionById(@PathVariable Long id) {
+        log.info("getPermissionById: id={}", id);
+        return permissionService.getPermissionById(id);
+    }
+
+    @PostMapping("/authorization/permission/add/companyId/{companyId}/userId/{userId}")
+    public Mono<PermissionDTO> addPermission(@RequestBody PermissionDTO dto) {
+        log.info("addPermission: {}", dto);
+        return permissionService.save(dto);
+    }
+
+    @PutMapping("/authorization/permission/update/companyId/{companyId}/userId/{userId}/valueId/{id}")
+    public Mono<PermissionDTO> updatePermission(@PathVariable Long id, @RequestBody PermissionDTO dto) {
+        log.info("updatePermission: id={}, dto={}", id, dto);
+        return permissionService.update(id, dto);
     }
 
     @GetMapping("/authorization/permission/total/companyId/{companyId}/userId/{userId}")
