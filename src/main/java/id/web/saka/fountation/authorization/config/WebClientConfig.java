@@ -1,6 +1,7 @@
 package id.web.saka.fountation.authorization.config;
 
 import id.web.saka.fountation.authorization.util.Env;
+import io.netty.channel.ChannelOption;
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,13 +29,14 @@ public class WebClientConfig {
     @Bean
     public HttpClient httpClient() {
         ConnectionProvider provider = ConnectionProvider.builder("fountation-authorization-pool")
-                .maxIdleTime(Duration.ofSeconds(20)) // Clear connections that have been idle for 20s
-                .maxLifeTime(Duration.ofMinutes(1))  // Max life of a connection
-                .evictInBackground(Duration.ofSeconds(30)) // Evict idle connections in background
+                .maxIdleTime(Duration.ofSeconds(60)) // Increased from 20s
+                .maxLifeTime(Duration.ofMinutes(5))  // Increased from 1m to match Gateway
+                .evictInBackground(Duration.ofSeconds(30))
                 .build();
 
         return HttpClient.create(provider)
-                .responseTimeout(Duration.ofSeconds(10)); // Request timeout
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 30s connection timeout
+                .responseTimeout(Duration.ofMinutes(2)); // Increased from 10s to 120s
     }
 
     @Bean

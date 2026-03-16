@@ -31,21 +31,36 @@ public class UserRegistrationService {
 
 
     public Mono<UserRegistrationDTO> assignRoleToNewUser(UserRegistrationDTO userRegistrationDTO) {
+        log.info("Starting role assignment for user: {} in company: {}",
+                userRegistrationDTO.user(), userRegistrationDTO.company());
+
         return companyRoleService.createDefaultRolesForNewCompany(userRegistrationDTO.company())
+                .doOnNext(role -> log.info("Step 1: Default roles created. RoleID: {}", role.getRoleId()))
                 .flatMap(companyRole -> {
-                    // First: assign ADMIN role to the new user
-                    log.info("Assigning role {} to new user {}", companyRole.getRoleId(), userRegistrationDTO.user());
+                    log.info("Step 2: Assigning ADMIN role {} to user ID: {}",
+                            companyRole.getRoleId(), userRegistrationDTO.user().getId());
+
                     return userRoleService.assignRoleToUser(userRegistrationDTO.user(), companyRole)
+                            .doOnNext(assigned -> log.info("Step 2 Success: Role assigned to user."))
                             .flatMap(assignedUserRole -> {
-                                // Second: set up role permissions
-                                return companyRolePermissionService.setupPermissionsForRole(userRegistrationDTO.company().id(), companyRole.getRoleId())
+                                log.info("Step 3: Setting up permissions for company: {} and role: {}",
+                                        userRegistrationDTO.company().id(), companyRole.getRoleId());
+
+                                return companyRolePermissionService.setupPermissionsForRole(
+                                                userRegistrationDTO.company().id(), companyRole.getRoleId())
+                                        .doOnSuccess(v -> log.info("Step 3 Success: Permissions configured."))
                                         .thenReturn(assignedUserRole);
                             })
-                            // Third: also assign SUPER_ADMIN role logic
-                            .then(assignSuperAdminRoleToNewCompanyAdmin(userRegistrationDTO, companyRole))
-                            // Finally: return the original DTO
+                            .then(Mono.defer(() -> {
+                                log.info("Step 4: Attempting SUPER_ADMIN assignment...");
+                                return assignSuperAdminRoleToNewCompanyAdmin(userRegistrationDTO, companyRole);
+                            }))
+                            .doOnSuccess(v -> log.info("Step 4 Success: Super Admin logic completed."))
                             .thenReturn(userRegistrationDTO);
-                });
+                })
+                .doOnError(e -> log.error("CRITICAL FAILURE in assignRoleToNewUser: {} - Message: {}",
+                        e.getClass().getSimpleName(), e.getMessage()))
+                .doOnTerminate(() -> log.info("Role assignment flow terminated."));
     }
 
     public Mono<Void> assignSuperAdminRoleToNewCompanyAdmin (
