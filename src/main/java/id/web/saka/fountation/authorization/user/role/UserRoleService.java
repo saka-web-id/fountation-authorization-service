@@ -40,6 +40,10 @@ public class UserRoleService {
 
     }
 
+    public Mono<UserRole> getByUserIdAndCompanyId(Long userId, Long companyId) {
+        return userRoleRepository.findByUserIdAndCompanyId(userId, companyId);
+    }
+
     public Mono<UserRole> updateUserRoles(Long companyId, UserRole payloadDTO) {
 
         return userRoleRepository.save(payloadDTO)

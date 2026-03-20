@@ -43,5 +43,13 @@ public class UserRoleController {
                 ).doOnError(error -> log.error("Error adding UserRole: " + error.getMessage()));
     }
 
+    @GetMapping("/authorization/user/role/detail/companyId/{companyId}/userId/{userId}")
+    public Mono<UserRole> getRoleByUserIdAndCompanyId(@PathVariable Long companyId,
+                                                      @PathVariable Long userId) {
+        log.info("Fetching UserRole for companyId: {} and userId: {}", companyId, userId);
+
+        return userRoleService.getByUserIdAndCompanyId(userId, companyId);
+    }
+
 
 }

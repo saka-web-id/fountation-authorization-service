@@ -3,7 +3,7 @@ package id.web.saka.fountation.authorization.user.role;
 import id.web.saka.fountation.authorization.user.registration.UserRegistrationMapper;
 import id.web.saka.fountation.authorization.user.registration.UserRegistrationService;
 import io.grpc.stub.StreamObserver;
-import net.devh.boot.grpc.server.service.GrpcService; // Import dari net.devh
+import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +27,26 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
         this.userRegistrationService = userRegistrationService;
         this.mapper = mapper;
         this.userRegistrationMapper = userRegistrationMapper;
+    }
+
+    @Override
+    public void getRoleByUserIdAndCompanyId(UserRoleRequest request, StreamObserver<UserRoleProto> responseObserver) {
+        log.info("Received gRPC request to get role by userId: {} and companyId: {}", request.getUserId(), request.getCompanyId());
+
+        userRoleService.getByUserIdAndCompanyId(request.getUserId(), request.getCompanyId())
+                .map(mapper::entityToProto)
+                .subscribe(
+                        response -> {
+                            responseObserver.onNext(response);
+                            responseObserver.onCompleted();
+                        },
+                        error -> handleGrpcError(error, responseObserver),
+                        () -> {
+                            // If empty, we can return an empty proto or error
+                            responseObserver.onNext(UserRoleProto.getDefaultInstance());
+                            responseObserver.onCompleted();
+                        }
+                );
     }
 
     @Override

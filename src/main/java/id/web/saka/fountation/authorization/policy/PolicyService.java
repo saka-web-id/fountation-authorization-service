@@ -1,6 +1,7 @@
 package id.web.saka.fountation.authorization.policy;
 
 import id.web.saka.fountation.authorization.company.role.permission.CompanyRolePermissionService;
+import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.user.UserService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
 import org.slf4j.Logger;
@@ -33,7 +34,6 @@ public class PolicyService {
     public Mono<PolicyResponseDTO> evaluate(Jwt jwt, Long userId, Long companyId, PolicyRequestDTO request) {
         logger.info("evaluate|request: {}", request);
 
-        // 1. Resolve User ID
         Mono<Long> userIdDecision = userId != null
                 ? Mono.just(userId)
                 : userService.getUserIdByEmail(jwt.getClaimAsString("https://example.com/email"))
@@ -41,41 +41,35 @@ public class PolicyService {
 
         return userIdDecision
                 .flatMap(uid -> userRoleService.getRoleByUserIdandCompanyId(uid, companyId)
-                        // 2. Handle User Role
                         .flatMap(userRole -> {
-                            logger.info("Checking permissions for role: {} (ID: {})", userRole.getName(), userRole.getId());
+                            logger.info("Checking role: {} (ID: {})", userRole.getName(), userRole.getId());
 
+                            // 1. SUPER_ADMIN BYPASS
+                            // Check by ID (1) or by Name string - whichever matches your DB/Enum
+                            if (userRole.getName().equals(Role.RoleName.SUPER_ADMIN)) {
+                                logger.info("SUPER_ADMIN detected for UID: {}. Granting full access.", uid);
+                                return Mono.just(new PolicyResponseDTO(true, "Allowed: Super Admin Privilege"));
+                            }
+
+                            // 2. STANDARD PERMISSION CHECK
                             return rolePermissionService.getPermissionsByCompanyIdRoleId(companyId, userRole.getId())
-                                    // 3. Filter for specific permission
-                                    .filter(permissionDTO ->
-                                            request.action().equalsIgnoreCase(permissionDTO.action()) &&
-                                                    request.resource().toLowerCase().startsWith(permissionDTO.resource().toLowerCase())
-                                    )
-                                    .next() // Take the first match
-                                    .map(permissionDTO -> {
-                                        logger.info("Permission matched: {}", permissionDTO.resource());
-                                        return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
-                                    })
-                                    // If permissions exist but none matched the filter
-                                    .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: No matching permission for role " + userRole.getName()));
+                                    .filter(p -> request.action().equalsIgnoreCase(p.action()) &&
+                                            request.resource().toLowerCase().startsWith(p.resource().toLowerCase()))
+                                    .next()
+                                    .map(p -> new PolicyResponseDTO(true, "Allowed by role " + userRole.getName()))
+                                    .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: No matching permission"));
                         })
-                        // 4. Handle Case: User has NO role in this company
                         .switchIfEmpty(Mono.defer(() -> {
-                            logger.warn("Access Denied: UserId {} has no role in CompanyId {}", uid, companyId);
-                            return Mono.just(new PolicyResponseDTO(false, "Denied: User has no assigned role in this company"));
+                            logger.warn("Access Denied: UID {} has no role in CID {}", uid, companyId);
+                            return Mono.just(new PolicyResponseDTO(false, "Denied: No assigned role"));
                         }))
                 )
-                // 5. Global Error Handling (Prevents gRPC hangs on exceptions)
                 .onErrorResume(e -> {
                     logger.error("Policy evaluation crashed: {}", e.getMessage());
-                    return Mono.just(new PolicyResponseDTO(false, "Denied: Internal evaluation error"));
+                    return Mono.just(new PolicyResponseDTO(false, "Denied: Internal error"));
                 })
-                // 6. Safety Timeout
                 .timeout(Duration.ofSeconds(10))
-                .onErrorResume(TimeoutException.class, e -> {
-                    logger.error("Policy evaluation timed out after 10s");
-                    return Mono.just(new PolicyResponseDTO(false, "Denied: Evaluation timeout"));
-                });
+                .onErrorResume(TimeoutException.class, e -> Mono.just(new PolicyResponseDTO(false, "Denied: Timeout")));
     }
 
 
