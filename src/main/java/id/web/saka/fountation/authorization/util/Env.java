@@ -1,4 +1,4 @@
-package id.web.saka.fountation.authorization.util;
+/*package id.web.saka.fountation.authorization.util;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -104,4 +104,4 @@ public class Env {
     public void setClientRegistrationInternalServiceTokenUri(String clientRegistrationInternalServiceTokenUri) {
         this.clientRegistrationInternalServiceTokenUri = clientRegistrationInternalServiceTokenUri;
     }
-}
+}*/

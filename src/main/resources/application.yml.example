@@ -1,80 +1,11 @@
-server:
-  #port: 0 # Use random port for local development to avoid conflicts. Eureka will register the actual port at runtime.
-  port: XXXX #--> Docker
-  error:
-    include-binding-errors: always
-    include-message: always
 spring:
   application:
     name: fountation-authorization-service
-  main:
-    web-application-type: reactive
   r2dbc:
-    password: XXXXXXXXXXXXXXXXXXXXXXXX
-    url: r2dbc:postgresql://XXXXXXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
-    username: XXXXXXXXXXXXXXXXXXXXXXXX
-  security:
-    oauth2:
-      client:
-        provider:
-          auth0:
-            authorization-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/authorize?audience=https://XXXXXXXXXXXXXXXXXXXXXXXX/
-            issuer-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
-            jwk-set-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
-            token-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
-            user-info-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
-        registration:
-          auth0:
-            authorization-grant-type: authorization_code
-            client-id: XXXXXXXXXXXXXXXXXXXXXXXX
-            client-name: Auth0
-            client-secret: XXXXXXXXXXXXXXXXXXXXXXXX
-            provider: auth0
-            redirect-uri: http://XXXXXXXXXXXXXXXXXXXXXXXX
-            scope: openid,profile,email
-          internal-service:
-            authorization-grant-type: client_credentials
-            client-id: XXXXXXXXXXXXXXXXXXXXXXXX
-            client-name: XXXXXXXXXXXXXXXXXXXXXXXX
-            client-secret: XXXXXXXXXXXXXXXXXXXXXXXX
-            provider: auth0
-            scope: internal:service
-      resourceserver:
-        jwt:
-          audiences:
-            - https://XXXXXXXXXXXXXXXXXXXXXXXX
-            - https://XXXXXXXXXXXXXXXXXXXXXXXX/
-          issuer-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX/
-          jwk-set-uri: https://XXXXXXXXXXXXXXXXXXXXXXXX
-  data:
-    redis:
-      host: XX.XX.XX.XX
-      port: XXXX
-      database: XX
-      password: XXXX
-grpc:
-  server:
-    port: XXXXX
-  client:
-      fountation-account-service:
-        address: 'static://fountation-account-service:XXXXX'
-        negotiation-type: plaintext
-
-fountation:
-  service:
-    users:
-      url: lb://fountation-user-service
-    ui:
-      url: http://fountationui
-    security:
-      jwt:
-        audience: https://myproject.local/api
-    redis:
-      store:
-        duration:
-          minutes: 10
-logging:
-    level:
-        org:
-            springframework:
-                security: trace
+    url: r2dbc:postgresql://XXXX:XXXX/fountation_authorization_db?currentSchema=authorization
+    username: XXXX
+    password: XXXX
+    pool:
+      initial-size: 10
+      max-size: 20
+      max-create-connection-time: 5s

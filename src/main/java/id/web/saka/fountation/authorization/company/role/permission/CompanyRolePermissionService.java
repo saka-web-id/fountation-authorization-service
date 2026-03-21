@@ -5,7 +5,7 @@ import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
-import id.web.saka.fountation.authorization.util.Env;
+import id.web.saka.fountation.configbase.fountation.FountationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -34,7 +34,7 @@ public class CompanyRolePermissionService {
 
     private final ReactiveRedisTemplate<String, CompanyRolePermissionDTO> redisTemplateCompanyRolePermissionDTO;
 
-    private final Env env;
+    private final FountationProperties fountationProperties;
 
     public CompanyRolePermissionService(CompanyRolePermissionRepository companyRolePermissionRepository,
                                  RoleService roleService,
@@ -42,14 +42,14 @@ public class CompanyRolePermissionService {
                                  PermissionService permissionService,
                                  CompanyRoleService companyRoleService,
                                  ReactiveRedisTemplate<String, CompanyRolePermissionDTO> redisTemplateCompanyRolePermissionDTO,
-                                 Env env) {
+                                 FountationProperties fountationProperties) {
         this.companyRolePermissionRepository = companyRolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
         this.permissionService = permissionService;
         this.companyRoleService = companyRoleService;
         this.redisTemplateCompanyRolePermissionDTO = redisTemplateCompanyRolePermissionDTO;
-        this.env = env;
+        this.fountationProperties = fountationProperties;
     }
 
     public Flux<PermissionDTO> getPermissionsByCompanyIdRoleId(Long companyId, Long roleId) {
@@ -186,7 +186,7 @@ public class CompanyRolePermissionService {
         log.info("Redis cache user {} with dto {} ", key, dto.toString() );
 
         return redisTemplateCompanyRolePermissionDTO.opsForValue()
-                .set(key, dto, Duration.ofMinutes(env.getFountationServiceRedisStoreDurationInMinutes()))
+                .set(key, dto, Duration.ofMinutes(fountationProperties.getService().getRedis().getStore().getDuration().getMinutes()))//fountation.service.redis.store.duration.minutes
                 .onErrorResume(err -> {
                     log.warn("Failed to cache in Redis: {}", err.getMessage());
                     return Mono.empty();
