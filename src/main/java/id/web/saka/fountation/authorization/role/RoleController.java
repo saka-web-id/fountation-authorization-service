@@ -19,17 +19,26 @@ public class RoleController {
 
     private final RoleMapper roleMapper;
 
-    public RoleController(RoleService roleService, RoleMapper roleMapper) {
+    private final id.web.saka.fountation.authorization.company.CompanyRoleService companyRoleService;
+
+    public RoleController(RoleService roleService, RoleMapper roleMapper, id.web.saka.fountation.authorization.company.CompanyRoleService companyRoleService) {
         this.roleService = roleService;
         this.roleMapper = roleMapper;
+        this.companyRoleService = companyRoleService;
     }
 
     @GetMapping("/authorization/role/detail/{roleId}")
     public Mono<RoleDTO> getRoleById(@PathVariable("roleId") Long roleId) {
-        log.info("Fetching role for roleId: " + roleId);
+        log.info("Fetching role for roleId: {}", roleId);
 
         return roleService.getRoleById(roleId)
                 .map(roleMapper::toDTO);
+    }
+
+    @GetMapping("/authorization/role/list/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}")
+    public Flux<RoleDTO> getRolesByCompanyId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId) {
+        log.info("Fetching roles for companyId: {}", valueCompanyId);
+        return companyRoleService.getAllRolesByCompanyId(valueCompanyId);
     }
 
 }
