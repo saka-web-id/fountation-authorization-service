@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v0")
 public class UserRoleController {
 
-    Logger log = LoggerFactory.getLogger(UserRoleController.class);
+    private static final Logger log = LoggerFactory.getLogger(UserRoleController.class);
 
     private final UserRoleService userRoleService;
 
@@ -21,32 +21,34 @@ public class UserRoleController {
     public Mono<UserRole> updateUserRole(@RequestBody Mono<UserRole> payload,
                                          @PathVariable Long companyId,
                                          @PathVariable Long userId) {
-        log.info("Updating UserRole for in companyId: " + companyId + " by userId: " + userId);
+        log.info("[API] UserRole | Update | START | companyId={} userId={}", companyId, userId);
 
-        return payload.
-                doOnNext(dto -> log.info("Incoming updateUserRole payload: {}", dto))
+        return payload
                 .flatMap(payloadDTO ->
                         userRoleService.updateUserRoles(companyId, payloadDTO)
-                ).doOnError(error -> log.error("Error updating UserRole: " + error.getMessage()));
+                )
+                .doOnSuccess(v -> log.info("[API] UserRole | Update | SUCCESS"))
+                .doOnError(error -> log.error("[API] UserRole | Update | ERROR | msg={}", error.getMessage()));
     }
 
     @PostMapping("/authorization/user/role/add/companyId/{companyId}/userId/{userId}")
     public Mono<UserRole> addUserRole(@RequestBody Mono<UserRole> payload,
                                       @PathVariable Long companyId,
                                       @PathVariable Long userId) {
-        log.info("Adding UserRole in companyId: " + companyId + " by userId: " + userId);
+        log.info("[API] UserRole | Add | START | companyId={} userId={}", companyId, userId);
 
-        return payload.
-                doOnNext(dto -> log.info("Incoming addUserRole payload: {}", dto))
+        return payload
                 .flatMap(payloadDTO ->
                         userRoleService.addUserRole(companyId, userId, payloadDTO)
-                ).doOnError(error -> log.error("Error adding UserRole: " + error.getMessage()));
+                )
+                .doOnSuccess(v -> log.info("[API] UserRole | Add | SUCCESS"))
+                .doOnError(error -> log.error("[API] UserRole | Add | ERROR | msg={}", error.getMessage()));
     }
 
     @GetMapping("/authorization/user/role/detail/companyId/{companyId}/userId/{userId}")
     public Mono<UserRole> getRoleByUserIdAndCompanyId(@PathVariable Long companyId,
                                                       @PathVariable Long userId) {
-        log.info("Fetching UserRole for companyId: {} and userId: {}", companyId, userId);
+        log.info("[API] UserRole | Detail | START | companyId={} userId={}", companyId, userId);
 
         return userRoleService.getByUserIdAndCompanyId(userId, companyId);
     }

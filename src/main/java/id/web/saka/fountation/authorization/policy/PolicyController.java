@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v0")
 public class PolicyController {
 
-    Logger logger = LoggerFactory.getLogger(PolicyController.class);
+    private static final Logger log = LoggerFactory.getLogger(PolicyController.class);
 
     private final PolicyService policyService;
 
@@ -24,14 +24,16 @@ public class PolicyController {
 
     @PostMapping("/authorization/policy/check/companyId/{companyId}")
     public Mono<ResponseEntity<PolicyResponseDTO>> authorize(@AuthenticationPrincipal Jwt jwt, @RequestBody PolicyRequestDTO request, @PathVariable Long companyId) {
-        logger.info("authorize|companyId:{}", companyId);
+        log.info("[API] Policy | Authorize | START | companyId={}", companyId);
 
 
         return policyService.evaluate(jwt, null, companyId, request)
                 .map(decision -> {
                     if (decision.isAllow()) {
+                        log.info("[API] Policy | Authorize | ALLOWED | companyId={}", companyId);
                         return ResponseEntity.ok(decision);
                     } else {
+                        log.warn("[API] Policy | Authorize | DENIED | companyId={} reason={}", companyId, decision.reason());
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(decision);
                     }
                 });
@@ -40,12 +42,15 @@ public class PolicyController {
 
     @PostMapping("/authorization/policy/check/companyId/{companyId}/userId/{userId}")
     public Mono<ResponseEntity<PolicyResponseDTO>> authorize(@AuthenticationPrincipal Jwt jwt, @RequestBody PolicyRequestDTO request, @PathVariable Long companyId, @PathVariable Long userId) {
+        log.info("[API] Policy | Authorize | START | companyId={} userId={}", companyId, userId);
 
         return policyService.evaluate(jwt, userId, companyId, request)
                 .map(decision -> {
                     if (decision.isAllow()) {
+                        log.info("[API] Policy | Authorize | ALLOWED | companyId={} userId={}", companyId, userId);
                         return ResponseEntity.ok(decision);
                     } else {
+                        log.warn("[API] Policy | Authorize | DENIED | companyId={} userId={} reason={}", companyId, userId, decision.reason());
                         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(decision);
                     }
                 });

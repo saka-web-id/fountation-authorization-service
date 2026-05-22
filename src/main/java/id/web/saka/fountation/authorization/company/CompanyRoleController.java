@@ -15,7 +15,7 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/api/v0")
 public class CompanyRoleController {
 
-    Logger logger = LoggerFactory.getLogger(CompanyRoleController.class);
+    private static final Logger log = LoggerFactory.getLogger(CompanyRoleController.class);
     private final CompanyRoleService companyRoleService;
 
     public CompanyRoleController(CompanyRoleService companyRoleService) {
@@ -24,7 +24,7 @@ public class CompanyRoleController {
 
     @GetMapping("/authorization/company/role/list/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}")
     public Flux<RoleDTO> getAllRolesByCompanyId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId) {
-        logger.info("Fetching all roles for companyId: " + valueCompanyId);
+        log.info("[API] CompanyRole | List | START | valueCompanyId={}", valueCompanyId);
         return companyRoleService.getAllRolesByCompanyId(valueCompanyId);
     }
 

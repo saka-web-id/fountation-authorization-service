@@ -22,7 +22,7 @@ public class PermissionGrpcService extends PermissionGrpcServiceGrpc.PermissionG
 
     @Override
     public void getPermissionList(PermissionListRequest request, StreamObserver<PermissionListResponse> responseObserver) {
-        log.info("Received gRPC request for permission list: companyId={}, userId={}",
+        log.info("[GRPC] Permission | List | START | companyId={} userId={}",
                 request.getCompanyId(), request.getUserId());
 
         permissionService.findAll()
@@ -30,11 +30,12 @@ public class PermissionGrpcService extends PermissionGrpcServiceGrpc.PermissionG
                 .collectList()
                 .map(this::buildResponse)
                 .doOnSuccess(response -> {
+                    log.info("[GRPC] Permission | List | SUCCESS | count={}", response.getPermissionsCount());
                     responseObserver.onNext(response);
                     responseObserver.onCompleted();
                 })
                 .doOnError(e -> {
-                    log.error("Error in gRPC service GetPermissionList: ", e);
+                    log.error("[GRPC] Permission | List | ERROR | msg={}", e.getMessage());
                     responseObserver.onError(io.grpc.Status.INTERNAL
                             .withDescription(e.getMessage())
                             .asRuntimeException());
@@ -44,17 +45,18 @@ public class PermissionGrpcService extends PermissionGrpcServiceGrpc.PermissionG
 
     @Override
     public void getPermissionTotal(PermissionListRequest request, StreamObserver<PermissionTotalResponse> responseObserver) {
-        log.info("Received gRPC request for permission total: companyId={}, userId={}",
+        log.info("[GRPC] Permission | Total | START | companyId={} userId={}",
                 request.getCompanyId(), request.getUserId());
 
         permissionService.countAllPermissionByCompanyId(request.getCompanyId(), request.getUserId())
                 .map(total -> PermissionTotalResponse.newBuilder().setTotal(total).build())
                 .doOnSuccess(response -> {
+                    log.info("[GRPC] Permission | Total | SUCCESS | total={}", response.getTotal());
                     responseObserver.onNext(response);
                     responseObserver.onCompleted();
                 })
                 .doOnError(e -> {
-                    log.error("Error in gRPC service GetPermissionTotal: ", e);
+                    log.error("[GRPC] Permission | Total | ERROR | msg={}", e.getMessage());
                     responseObserver.onError(io.grpc.Status.INTERNAL
                             .withDescription(e.getMessage())
                             .asRuntimeException());

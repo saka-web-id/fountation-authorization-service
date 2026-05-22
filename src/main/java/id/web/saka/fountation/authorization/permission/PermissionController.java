@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v0")
 public class PermissionController {
 
-    Logger log = LoggerFactory.getLogger(PermissionController.class);
+    private static final Logger log = LoggerFactory.getLogger(PermissionController.class);
 
     private final PermissionService permissionService;
 
@@ -21,32 +21,32 @@ public class PermissionController {
 
     @GetMapping("/authorization/permission/list/companyId/{companyId}/userId/{userId}")
     public Flux<PermissionDTO> getAllPermissions(@PathVariable Long companyId, @PathVariable Long userId ) {
-        log.info("getAllPermissions: companyId={}, userId={}", companyId, userId);
+        log.info("[API] Permission | List | START | companyId={} userId={}", companyId, userId);
 
         return permissionService.findAll();
     }
 
     @GetMapping("/authorization/permission/detail/companyId/{companyId}/userId/{userId}/valueId/{id}")
     public Mono<PermissionDTO> getPermissionById(@PathVariable Long id) {
-        log.info("getPermissionById: id={}", id);
+        log.info("[API] Permission | Detail | START | id={}", id);
         return permissionService.getPermissionById(id);
     }
 
     @PostMapping("/authorization/permission/add/companyId/{companyId}/userId/{userId}")
     public Mono<PermissionDTO> addPermission(@RequestBody PermissionDTO dto) {
-        log.info("addPermission: {}", dto);
+        log.info("[API] Permission | Add | START | resource={} action={}", dto.resource(), dto.action());
         return permissionService.save(dto);
     }
 
     @PutMapping("/authorization/permission/update/companyId/{companyId}/userId/{userId}/valueId/{id}")
     public Mono<PermissionDTO> updatePermission(@PathVariable Long id, @RequestBody PermissionDTO dto) {
-        log.info("updatePermission: id={}, dto={}", id, dto);
+        log.info("[API] Permission | Update | START | id={}", id);
         return permissionService.update(id, dto);
     }
 
     @GetMapping("/authorization/permission/total/companyId/{companyId}/userId/{userId}")
     public Mono<Integer> countAllPermissionByCompanyId(@PathVariable Long companyId, @PathVariable Long userId ) {
-        log.info("countAllPermissionByCompanyId: companyId={}, userId={}", companyId, userId);
+        log.info("[API] Permission | Total | START | companyId={} userId={}", companyId, userId);
 
         return permissionService.countAllPermissionByCompanyId(companyId, userId);
     }

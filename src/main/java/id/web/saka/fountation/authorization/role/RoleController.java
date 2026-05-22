@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/api/v0")
 public class RoleController {
 
-    Logger log = LoggerFactory.getLogger(RoleController.class);
+    private static final Logger log = LoggerFactory.getLogger(RoleController.class);
 
     private final RoleService roleService;
 
@@ -29,7 +29,7 @@ public class RoleController {
 
     @GetMapping("/authorization/role/detail/{roleId}")
     public Mono<RoleDTO> getRoleById(@PathVariable("roleId") Long roleId) {
-        log.info("Fetching role for roleId: {}", roleId);
+        log.info("[API] Role | Detail | START | roleId={}", roleId);
 
         return roleService.getRoleById(roleId)
                 .map(roleMapper::toDTO);
@@ -37,7 +37,7 @@ public class RoleController {
 
     @GetMapping("/authorization/role/list/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}")
     public Flux<RoleDTO> getRolesByCompanyId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId) {
-        log.info("Fetching roles for companyId: {}", valueCompanyId);
+        log.info("[API] Role | List | START | valueCompanyId={}", valueCompanyId);
         return companyRoleService.getAllRolesByCompanyId(valueCompanyId);
     }
 

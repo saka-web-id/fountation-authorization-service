@@ -18,27 +18,26 @@ public class CompanyRolePermissionGrpcService extends CompanyRolePermissionServi
     @Override
     public void getCompanyRolePermission(GetCompanyRolePermissionRequest request,
                                          StreamObserver<CompanyRolePermissionProto> responseObserver) {
-        log.info("Received gRPC request for company role permissions: companyId={}, userId={}",
+        log.info("[GRPC] CompanyRolePermission | Fetch | START | companyId={} userId={}",
                 request.getCompanyId(), request.getUserId());
 
         service.getCompanyRolePermissionsByCompanyRoleId(request.getCompanyId(), request.getUserId())
                 .map(this::mapToProto)
                 .doOnSuccess(proto -> {
+                    log.info("[GRPC] CompanyRolePermission | Fetch | SUCCESS");
                     responseObserver.onNext(proto);
                     responseObserver.onCompleted();
                 })
                 .doOnError(e -> {
-                    log.error("Error in gRPC service: ", e);
+                    log.error("[GRPC] CompanyRolePermission | Fetch | ERROR | msg={}", e.getMessage());
                     responseObserver.onError(io.grpc.Status.INTERNAL
                             .withDescription(e.getMessage())
                             .asRuntimeException());
                 })
-                .subscribe(); // Wajib di-subscribe karena gRPC base class tidak reaktif murni
+                .subscribe(); 
     }
 
     private CompanyRolePermissionProto mapToProto(CompanyRolePermissionDTO dto) {
-        log.info("Mapping CompanyRolePermissionDTO to Proto: {}", dto);
-
         return CompanyRolePermissionProto.newBuilder()
                 .setRoleId(dto.roleId())
                 .setCompanyId(dto.companyId())

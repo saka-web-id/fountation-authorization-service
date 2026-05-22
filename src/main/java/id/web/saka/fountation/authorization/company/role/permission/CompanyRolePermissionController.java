@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v0")
 public class CompanyRolePermissionController {
 
-    Logger log = LoggerFactory.getLogger(CompanyRolePermissionController.class);
+    private static final Logger log = LoggerFactory.getLogger(CompanyRolePermissionController.class);
 
     private final CompanyRolePermissionService rolePermissionService;
 
@@ -22,22 +22,22 @@ public class CompanyRolePermissionController {
 
     @GetMapping("/authorization/company/role/permission/detail/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}/valueRoleId/{roleId}")
     public Mono<CompanyRolePermissionDTO> getCompanyRolePermissionsByCompanyRoleId(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId, @PathVariable Long roleId) {
+        log.info("[API] CompanyRolePermission | Detail | START | companyId={} roleId={}", valueCompanyId, roleId);
         return rolePermissionService.getCompanyRolePermissionsByCompanyRoleId(valueCompanyId, roleId);
     }
 
     @GetMapping("/authorization/company/role/permission/detail/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}/valueUserId/{valueUserId}")
     public Mono<CompanyRolePermissionDTO> getRoleByUserId(@PathVariable Long valueCompanyId, @PathVariable("userId") Long valueUserId) {
-
-        log.info("Fetching RolePermissionDTO for userId: " + valueUserId);
+        log.info("[API] CompanyRolePermission | DetailByUserId | START | companyId={} userId={}", valueCompanyId, valueUserId);
         return rolePermissionService.getCompanyRolePermissionsByCompanyRoleId(valueCompanyId, valueUserId);
     }
 
     @PostMapping("/authorization/company/role/permission/update/companyId/{companyId}/userId/{userId}/valueCompanyId/{valueCompanyId}/valueRoleId/{roleId}")
     public Mono<ResponseEntity<CompanyRolePermissionDTO>> updateRolePermissions(@PathVariable Long companyId, @PathVariable Long userId, @PathVariable Long valueCompanyId, @PathVariable Long roleId, @RequestBody Mono<CompanyRolePermissionDTO> payload) {
-        log.info("updateRolePermissions|roleId:{}|START", roleId);
+        log.info("[API] CompanyRolePermission | Update | START | companyId={} roleId={}", valueCompanyId, roleId);
 
         return payload.flatMap(rolePermissionDTO -> rolePermissionService.updateRolePermissions(valueCompanyId, roleId, rolePermissionDTO)).map(ResponseEntity::ok)
-                .doOnError(e -> log.error("Failed to update role permissions for roleId {}", roleId, e))
+                .doOnError(e -> log.error("[API] CompanyRolePermission | Update | ERROR | roleId={} msg={}", roleId, e.getMessage()))
                 .onErrorResume(e -> {
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });

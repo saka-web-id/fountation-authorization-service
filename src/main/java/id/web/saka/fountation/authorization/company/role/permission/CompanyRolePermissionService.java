@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 public class CompanyRolePermissionService {
 
-    Logger log = LoggerFactory.getLogger(CompanyRolePermissionService.class);
+    private static final Logger log = LoggerFactory.getLogger(CompanyRolePermissionService.class);
 
     private final CompanyRolePermissionRepository companyRolePermissionRepository;
 
@@ -53,66 +53,62 @@ public class CompanyRolePermissionService {
     }
 
     public Flux<PermissionDTO> getPermissionsByCompanyIdRoleId(Long companyId, Long roleId) {
-
         return companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
                 .flatMap(rolePermission ->
                         permissionService.getPermissionById(rolePermission.getPermissionId())
-                ).doOnNext(permissionDTO ->
-                        {
-                            // You can add logging here if needed
-                            log.info("Fetched PermissionDTO: " + permissionDTO.toString());
-                        }
                 );
-
     }
 
     public Mono<CompanyRolePermissionDTO> getCompanyRolePermissionsByCompanyRoleId(Long companyId, Long roleId) {
-        log.info("getRolePermissionByRoleId: {}", roleId);
+        log.info("[COMPANY_ROLE_PERMISSION] Fetch | START | companyId={} roleId={}", companyId, roleId);
 
         return redisTemplateCompanyRolePermissionDTO.opsForValue().get(buildCacheKey(companyId, roleId))
-                .map(obj -> (CompanyRolePermissionDTO) obj)   // cast here
+                .map(obj -> {
+                    log.info("[REDIS] Cache | HIT | key={}", buildCacheKey(companyId, roleId));
+                    return (CompanyRolePermissionDTO) obj;
+                })
                 .onErrorResume(e -> {
-                    log.warn("Redis unavailable, fallback to DB: {}", e.getMessage());
+                    log.warn("[REDIS] Cache | ERROR | msg={} | fallback=DB", e.getMessage());
                     return Mono.empty();
                 })
                 .switchIfEmpty(
-                        roleService.getRoleById(roleId).flatMap(role ->
-                                companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
-                                        .collectList()
-                                        .flatMap(companyRolePermissions ->
-                                                getPermissionsForRole(companyId, roleId)
-                                                        .collectList()
-                                                        .flatMap(permissionDTOS ->
-                                                                cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), new CompanyRolePermissionDTO(
-                                                                        roleId,
-                                                                        companyId,
-                                                                        role.getName().toString(),
-                                                                        role.getDescription(),
-                                                                        permissionDTOS
-                                                                ))
-                                                        )
-                                        )
-                        )
+                        Mono.defer(() -> {
+                            log.info("[REDIS] Cache | MISS | key={} | fetching from DB", buildCacheKey(companyId, roleId));
+                            return roleService.getRoleById(roleId).flatMap(role ->
+                                    companyRolePermissionRepository.findAllByCompanyIdAndRoleId(companyId, roleId)
+                                            .collectList()
+                                            .flatMap(companyRolePermissions ->
+                                                    getPermissionsForRole(companyId, roleId)
+                                                            .collectList()
+                                                            .flatMap(permissionDTOS ->
+                                                                    cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), new CompanyRolePermissionDTO(
+                                                                            roleId,
+                                                                            companyId,
+                                                                            role.getName().toString(),
+                                                                            role.getDescription(),
+                                                                            permissionDTOS
+                                                                    ))
+                                                            )
+                                            )
+                            );
+                        })
                 );
     }
 
     public Mono<CompanyRolePermissionDTO> updateRolePermissions(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
-        log.info("updateRolePermissions|roleId:{}|rolePermissionDTO:{}|START", roleId, rolePermissionDTO);
+        log.info("[COMPANY_ROLE_PERMISSION] Update | START | companyId={} roleId={}", companyId, roleId);
 
         return roleService.saveRole(roleMapper.toRequestEntity(rolePermissionDTO))
                 .flatMap(savedRole -> saveRolePermission(companyId, roleId, rolePermissionDTO))
                 .flatMap(dto -> {
-                    // chain cache write, but return dto immediately
                     return cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto)
                             .onErrorResume(err -> {
-                                log.warn("Failed to cache in Redis: {}", err.getMessage());
-                                return Mono.empty(); // ignore cache failure
+                                log.warn("[REDIS] Cache | ERROR | action=UPDATE msg={}", err.getMessage());
+                                return Mono.empty();
                             })
-                            .thenReturn(dto); // return original dto regardless
-                });
-
-
-
+                            .thenReturn(dto);
+                })
+                .doOnSuccess(v -> log.info("[COMPANY_ROLE_PERMISSION] Update | SUCCESS | companyId={} roleId={}", companyId, roleId));
     }
 
     private Mono<CompanyRolePermissionDTO> saveRolePermission(Long companyId, Long roleId, CompanyRolePermissionDTO rolePermissionDTO) {
@@ -131,29 +127,27 @@ public class CompanyRolePermissionService {
                                     }
                                 })
                                 .collectList()
-                                .thenReturn(rolePermissionDTO) // ✅ return the original DTO without blocking
+                                .thenReturn(rolePermissionDTO)
                 )
                 .flatMap(dto ->
                         cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto)
                                 .onErrorResume(err -> {
-                                    log.warn("Failed to cache in Redis: {}", err.getMessage());
-                                    return Mono.just(dto); // fallback to original DTO if cache fails
+                                    log.warn("[REDIS] Cache | ERROR | action=SAVE msg={}", err.getMessage());
+                                    return Mono.just(dto);
                                 })
                 );
     }
 
 
     private Flux<PermissionDTO> getPermissionsForRole(Long companyId, Long roleId) {
-        // Step 1: collect assigned permission IDs into a Set
         Mono<Set<Long>> assignedIdsMono = getPermissionsByCompanyIdRoleId(companyId, roleId)
                 .map(PermissionDTO::id)
                 .collect(Collectors.toSet());
 
-        // Step 2: map all permissions with flag and ensure uniqueness
         return assignedIdsMono.flatMapMany(assignedIds ->
                 companyRoleService.getAllRolesByCompanyId(companyId)
                         .flatMap(roleDTO -> getPermissionsByCompanyIdRoleId(companyId, roleDTO.getId()))
-                        .distinct(PermissionDTO::id) // Ensure unique PermissionDTOs based on ID
+                        .distinct(PermissionDTO::id)
                         .map(permissionDTO ->
                                 new PermissionDTO(
                                         permissionDTO.id(),
@@ -162,14 +156,14 @@ public class CompanyRolePermissionService {
                                         permissionDTO.resource(),
                                         permissionDTO.action(),
                                         permissionDTO.description(),
-                                        assignedIds.contains(permissionDTO.id()) // updated flag
+                                        assignedIds.contains(permissionDTO.id())
                                 )
                         )
         );
     }
 
     public Mono<Void> setupPermissionsForRole(Long companyId, Long roleId) {
-        //TODO setup permissions for role except for permissions with flag is_super_admin is true
+        log.info("[COMPANY_ROLE_PERMISSION] Setup | START | companyId={} roleId={}", companyId, roleId);
         return permissionService.findAll()
                 .filter(permissionDTO -> !permissionDTO.superAdmin())
                 .flatMap(permissionDTO -> {
@@ -179,16 +173,17 @@ public class CompanyRolePermissionService {
                     rolePermission.setPermissionId(permissionDTO.id());
                     return companyRolePermissionRepository.save(rolePermission);
                 })
-                .then();
+                .then()
+                .doOnSuccess(v -> log.info("[COMPANY_ROLE_PERMISSION] Setup | SUCCESS | companyId={} roleId={}", companyId, roleId));
     }
 
     private Mono<CompanyRolePermissionDTO> cacheCompanyRolePermissionDTO(String key, CompanyRolePermissionDTO dto) {
-        log.info("Redis cache user {} with dto {} ", key, dto.toString() );
+        log.info("[REDIS] Cache | SET | key={}", key);
 
         return redisTemplateCompanyRolePermissionDTO.opsForValue()
-                .set(key, dto, Duration.ofMinutes(fountationProperties.getService().getRedis().getStore().getDuration().getMinutes()))//fountation.service.redis.store.duration.minutes
+                .set(key, dto, Duration.ofMinutes(fountationProperties.getService().getRedis().getStore().getDuration().getMinutes()))
                 .onErrorResume(err -> {
-                    log.warn("Failed to cache in Redis: {}", err.getMessage());
+                    log.warn("[REDIS] Cache | ERROR | action=SET msg={}", err.getMessage());
                     return Mono.empty();
                 })
                 .thenReturn(dto);

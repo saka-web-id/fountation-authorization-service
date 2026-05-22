@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class UserRoleService {
 
-    Logger log = LoggerFactory.getLogger(UserRoleService.class);
+    private static final Logger log = LoggerFactory.getLogger(UserRoleService.class);
     private final UserRoleRepository userRoleRepository;
 
     private final RoleService roleService;
@@ -34,7 +34,7 @@ public class UserRoleService {
                     if (role == null) {
                         throw new RuntimeException("Role not found for userId: " + userId );
                     } else {
-                        log.info("Found role: " + role.toString() + " for userId: " + userId );
+                        log.debug("[USER_ROLE] Fetch | SUCCESS | uid={} role={}", userId, role.getName());
                     }
                 });
 
@@ -45,28 +45,28 @@ public class UserRoleService {
     }
 
     public Mono<UserRole> updateUserRoles(Long companyId, UserRole payloadDTO) {
-
+        log.info("[USER_ROLE] Update | START | companyId={} userId={}", companyId, payloadDTO.getUserId());
         return userRoleRepository.save(payloadDTO)
-                .doOnNext(savedUserRole -> log.info("Updated UserRole: {}", savedUserRole));
+                .doOnSuccess(saved -> log.info("[USER_ROLE] Update | SUCCESS | id={}", saved.getId()));
     }
 
     public Mono<UserRole> addUserRole(Long companyId, Long userId, UserRole payloadDTO) {
+        log.info("[USER_ROLE] Add | START | companyId={} userId={}", companyId, userId);
         return userRoleRepository.save(payloadDTO)
-                .doOnNext(savedUserRole -> log.info("Added UserRole: {}", savedUserRole));
+                .doOnSuccess(saved -> log.info("[USER_ROLE] Add | SUCCESS | id={}", saved.getId()));
     }
 
     public Mono<UserRole> assignRoleToUser(UserDTO user, CompanyRole companyRole) {
+        log.info("[USER_ROLE] Assign | START | userId={} roleId={}", user.getId(), companyRole.getRoleId());
         return userRoleRepository.save(new UserRole(user.getId(), companyRole.getCompanyId(), companyRole.getRoleId()))
-                .doOnNext(savedUserRole -> log.info("Assigned UserRole: {}", savedUserRole));
+                .doOnSuccess(saved -> log.info("[USER_ROLE] Assign | SUCCESS | id={}", saved.getId()));
     }
 
     public Flux<UserRole> getUserRoleByRoleName(Role.RoleName roleName) {
-
         return roleService.getRoleByName(roleName).flatMap(role -> {
+            log.debug("[USER_ROLE] FetchByRoleName | roleName={}", roleName);
             return userRoleRepository.findAllByRoleId(role.getId())
-                    .doOnNext(userRole -> log.info("Found UserRole: {}", userRole))
-                    .distinct(UserRole::getUserId); // distinct by userId
-
+                    .distinct(UserRole::getUserId);
         });
     }
 

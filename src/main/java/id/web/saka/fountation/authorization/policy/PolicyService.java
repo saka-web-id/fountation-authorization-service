@@ -16,7 +16,7 @@ import java.util.concurrent.TimeoutException;
 @Service
 public class PolicyService {
 
-    Logger logger = LoggerFactory.getLogger(PolicyService.class);
+    private static final Logger log = LoggerFactory.getLogger(PolicyService.class);
 
     private final UserService userService;
 
@@ -32,7 +32,7 @@ public class PolicyService {
 
 
     public Mono<PolicyResponseDTO> evaluate(Jwt jwt, Long userId, Long companyId, PolicyRequestDTO request) {
-        logger.info("evaluate|request: {}", request);
+        log.info("[POLICY] Evaluate | START | userId={} companyId={} request={}", userId, companyId, request);
 
         Mono<Long> userIdDecision = userId != null
                 ? Mono.just(userId)
@@ -42,12 +42,11 @@ public class PolicyService {
         return userIdDecision
                 .flatMap(uid -> userRoleService.getRoleByUserIdandCompanyId(uid, companyId)
                         .flatMap(userRole -> {
-                            logger.info("Checking role: {} (ID: {})", userRole.getName(), userRole.getId());
+                            log.debug("[POLICY] Evaluate | CHECKING_ROLE | uid={} role={} roleId={}", uid, userRole.getName(), userRole.getId());
 
                             // 1. SUPER_ADMIN BYPASS
-                            // Check by ID (1) or by Name string - whichever matches your DB/Enum
                             if (userRole.getName().equals(Role.RoleName.SUPER_ADMIN)) {
-                                logger.info("SUPER_ADMIN detected for UID: {}. Granting full access.", uid);
+                                log.info("[POLICY] Evaluate | BYPASS | uid={} role=SUPER_ADMIN | result=ALLOWED", uid);
                                 return Mono.just(new PolicyResponseDTO(true, "Allowed: Super Admin Privilege"));
                             }
 
@@ -56,20 +55,27 @@ public class PolicyService {
                                     .filter(p -> request.action().equalsIgnoreCase(p.action()) &&
                                             request.resource().toLowerCase().startsWith(p.resource().toLowerCase()))
                                     .next()
-                                    .map(p -> new PolicyResponseDTO(true, "Allowed by role " + userRole.getName()))
+                                    .map(p -> {
+                                        log.info("[POLICY] Evaluate | SUCCESS | uid={} role={} resource={} action={} | result=ALLOWED", 
+                                                uid, userRole.getName(), request.resource(), request.action());
+                                        return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
+                                    })
                                     .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: No matching permission"));
                         })
                         .switchIfEmpty(Mono.defer(() -> {
-                            logger.warn("Access Denied: UID {} has no role in CID {}", uid, companyId);
+                            log.warn("[POLICY] Evaluate | DENIED | uid={} companyId={} | reason=NO_ROLE_ASSIGNED", uid, companyId);
                             return Mono.just(new PolicyResponseDTO(false, "Denied: No assigned role"));
                         }))
                 )
                 .onErrorResume(e -> {
-                    logger.error("Policy evaluation crashed: {}", e.getMessage());
+                    log.error("[POLICY] Evaluate | ERROR | msg={}", e.getMessage());
                     return Mono.just(new PolicyResponseDTO(false, "Denied: Internal error"));
                 })
                 .timeout(Duration.ofSeconds(10))
-                .onErrorResume(TimeoutException.class, e -> Mono.just(new PolicyResponseDTO(false, "Denied: Timeout")));
+                .onErrorResume(TimeoutException.class, e -> {
+                    log.error("[POLICY] Evaluate | TIMEOUT | userId={} companyId={}", userId, companyId);
+                    return Mono.just(new PolicyResponseDTO(false, "Denied: Timeout"));
+                });
     }
 
 

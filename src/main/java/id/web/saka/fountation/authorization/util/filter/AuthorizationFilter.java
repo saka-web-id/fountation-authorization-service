@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 @Component
 public class AuthorizationFilter implements WebFilter {
 
-    Logger logger = LoggerFactory.getLogger(AuthorizationFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthorizationFilter.class);
 
     private final PolicyService policyService;
 
@@ -37,10 +37,10 @@ public class AuthorizationFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
-        logger.info("filter|START|path={}", path);
+        log.debug("[FILTER] Authorization | START | path={}", path);
 
         if (EXCLUDED_PATHS.stream().anyMatch(path::startsWith)) {
-            logger.info("filter|SKIP authorization for path={}", path);
+            log.debug("[FILTER] Authorization | SKIP | path={}", path);
             return chain.filter(exchange);
         }
 
@@ -52,7 +52,7 @@ public class AuthorizationFilter implements WebFilter {
         if (matcher.find()) {
             companyId = Long.valueOf(matcher.group(1));
             userId = Long.valueOf(matcher.group(2));
-            logger.info("Parsed companyId={}, userId={}", companyId, userId);
+            log.debug("[FILTER] Authorization | PARSED | companyId={} userId={}", companyId, userId);
         } else {
             userId = 0L;
             companyId = 0L;
@@ -70,6 +70,7 @@ public class AuthorizationFilter implements WebFilter {
                                 if (decision.isAllow()) {
                                     return chain.filter(exchange);
                                 } else {
+                                    log.warn("[FILTER] Authorization | DENIED | path={} userId={} companyId={}", path, userId, companyId);
                                     exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                                     return exchange.getResponse().setComplete();
                                 }

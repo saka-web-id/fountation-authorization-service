@@ -21,7 +21,7 @@ public class PolicyGrpcService extends PolicyServiceGrpc.PolicyServiceImplBase {
 
     @Override
     public void checkPolicy(PolicyRequest request, StreamObserver<PolicyResponse> responseObserver) {
-        log.info("Received gRPC policy check request: companyId={}, userId={}",
+        log.info("[GRPC] Policy | Check | START | companyId={} userId={}",
                 request.getCompanyId(), request.hasUserId() ? request.getUserId() : "N/A");
 
         PolicyRequestDTO dto = mapper.toDTO(request);
@@ -30,9 +30,8 @@ public class PolicyGrpcService extends PolicyServiceGrpc.PolicyServiceImplBase {
 
         policyService.evaluate(null, userId, companyId, dto)
                 .map(mapper::toProto)
-                // CRITICAL: Handle the "Empty" case if the service returns Mono.empty()
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("Policy evaluation returned empty. Sending default Denied.");
+                    log.warn("[GRPC] Policy | Check | EMPTY | sending default denied");
                     return Mono.just(PolicyResponse.newBuilder()
                             .setIsAllow(false)
                             .setReason("Denied: Evaluation resulted in no data")
@@ -40,12 +39,12 @@ public class PolicyGrpcService extends PolicyServiceGrpc.PolicyServiceImplBase {
                 }))
                 .subscribe(
                         response -> {
+                            log.info("[GRPC] Policy | Check | SUCCESS | allowed={}", response.getIsAllow());
                             responseObserver.onNext(response);
                             responseObserver.onCompleted();
                         },
                         error -> {
-                            log.error("Error evaluating policy via gRPC", error);
-                            // Map common exceptions to specific gRPC Statuses
+                            log.error("[GRPC] Policy | Check | ERROR | msg={}", error.getMessage());
                             io.grpc.Status status = (error instanceof java.util.concurrent.TimeoutException)
                                     ? io.grpc.Status.DEADLINE_EXCEEDED
                                     : io.grpc.Status.INTERNAL;

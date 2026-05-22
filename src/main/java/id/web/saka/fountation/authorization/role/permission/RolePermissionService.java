@@ -51,12 +51,12 @@ public class RolePermissionService {
         return rolePermissionRepository.findAllByRoleId(roleId)
                 .flatMap(rolePermission ->
                         permissionService.getPermissionById(rolePermission.getPermissionId())
-                ).doOnNext(permissionDTO ->
+                )/*.doOnNext(permissionDTO ->
                         {
                             // You can add logging here if needed
                             log.info("Fetched PermissionDTO: " + permissionDTO.toString());
                         }
-                );
+                )*/;
 
     }
 

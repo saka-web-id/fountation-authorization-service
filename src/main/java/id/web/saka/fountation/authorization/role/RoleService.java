@@ -1,11 +1,15 @@
 package id.web.saka.fountation.authorization.role;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 public class RoleService {
+
+    private static final Logger log = LoggerFactory.getLogger(RoleService.class);
 
     private final RoleRepository roleRepository;
 
@@ -21,6 +25,7 @@ public class RoleService {
     }
 
     public Mono<RoleDTO> saveRole(Role roleDTOMono) {
+        log.info("[ROLE] Save | START | roleName={}", roleDTOMono.getName());
         return roleRepository.save(roleDTOMono)
                 .map(roleMapper::toDTO);
     }

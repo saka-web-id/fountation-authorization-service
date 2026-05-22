@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class UserRegistrationService {
 
-    Logger log = LoggerFactory.getLogger(UserRegistrationService.class);
+    private static final Logger log = LoggerFactory.getLogger(UserRegistrationService.class);
 
     private final CompanyRoleService companyRoleService;
 
@@ -31,36 +31,36 @@ public class UserRegistrationService {
 
 
     public Mono<UserRegistrationDTO> assignRoleToNewUser(UserRegistrationDTO userRegistrationDTO) {
-        log.info("Starting role assignment for user: {} in company: {}",
-                userRegistrationDTO.user(), userRegistrationDTO.company());
+        log.info("[USER_REGISTRATION] AssignRole | START | user={} company={}",
+                userRegistrationDTO.user().getEmail(), userRegistrationDTO.company().id());
 
         return companyRoleService.createDefaultRolesForNewCompany(userRegistrationDTO.company())
-                .doOnNext(role -> log.info("Step 1: Default roles created. RoleID: {}", role.getRoleId()))
+                .doOnNext(role -> log.info("[USER_REGISTRATION] AssignRole | DEFAULT_ROLES_CREATED | roleId={}", role.getRoleId()))
                 .flatMap(companyRole -> {
-                    log.info("Step 2: Assigning ADMIN role {} to user ID: {}",
+                    log.info("[USER_REGISTRATION] AssignRole | ASSIGNING_ADMIN | roleId={} userId={}",
                             companyRole.getRoleId(), userRegistrationDTO.user().getId());
 
                     return userRoleService.assignRoleToUser(userRegistrationDTO.user(), companyRole)
-                            .doOnNext(assigned -> log.info("Step 2 Success: Role assigned to user."))
+                            .doOnNext(assigned -> log.info("[USER_REGISTRATION] AssignRole | ADMIN_ASSIGNED"))
                             .flatMap(assignedUserRole -> {
-                                log.info("Step 3: Setting up permissions for company: {} and role: {}",
+                                log.info("[USER_REGISTRATION] AssignRole | SETUP_PERMISSIONS | companyId={} roleId={}",
                                         userRegistrationDTO.company().id(), companyRole.getRoleId());
 
                                 return companyRolePermissionService.setupPermissionsForRole(
                                                 userRegistrationDTO.company().id(), companyRole.getRoleId())
-                                        .doOnSuccess(v -> log.info("Step 3 Success: Permissions configured."))
+                                        .doOnSuccess(v -> log.info("[USER_REGISTRATION] AssignRole | PERMISSIONS_SETUP_SUCCESS"))
                                         .thenReturn(assignedUserRole);
                             })
                             .then(Mono.defer(() -> {
-                                log.info("Step 4: Attempting SUPER_ADMIN assignment...");
+                                log.info("[USER_REGISTRATION] AssignRole | ATTEMPT_SUPER_ADMIN | userId={}", userRegistrationDTO.user().getId());
                                 return assignSuperAdminRoleToNewCompanyAdmin(userRegistrationDTO, companyRole);
                             }))
-                            .doOnSuccess(v -> log.info("Step 4 Success: Super Admin logic completed."))
+                            .doOnSuccess(v -> log.info("[USER_REGISTRATION] AssignRole | SUPER_ADMIN_COMPLETED"))
                             .thenReturn(userRegistrationDTO);
                 })
-                .doOnError(e -> log.error("CRITICAL FAILURE in assignRoleToNewUser: {} - Message: {}",
+                .doOnError(e -> log.error("[USER_REGISTRATION] AssignRole | ERROR | type={} msg={}",
                         e.getClass().getSimpleName(), e.getMessage()))
-                .doOnTerminate(() -> log.info("Role assignment flow terminated."));
+                .doOnTerminate(() -> log.info("[USER_REGISTRATION] AssignRole | END"));
     }
 
     public Mono<Void> assignSuperAdminRoleToNewCompanyAdmin (

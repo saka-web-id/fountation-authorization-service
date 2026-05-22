@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v0")
 public class UserRegistrationController {
 
-    Logger log = LoggerFactory.getLogger(UserRegistrationController.class);
+    private static final Logger log = LoggerFactory.getLogger(UserRegistrationController.class);
 
     private final UserRegistrationService userRegistrationService;
 
@@ -23,12 +23,11 @@ public class UserRegistrationController {
 
     @PostMapping("/authorization/user/registration")
     public Mono<UserRegistrationDTO> assignRoleToNewUser(@RequestBody Mono<UserRegistrationDTO> payload) {
-        log.info("Registering UserRole for new user: {}", payload);
-
-        return payload.
-                doOnNext(dto -> log.info("Incoming assignRoleToNewUser payload: {}", dto))
-                .flatMap(userRegistrationService::assignRoleToNewUser
-                ).doOnError(error -> log.error("Error assigning role to new user: " + error.getMessage()));
+        return payload
+                .doOnNext(dto -> log.info("[API] UserRegistration | Register | START | email={}", dto.user().getEmail()))
+                .flatMap(userRegistrationService::assignRoleToNewUser)
+                .doOnSuccess(dto -> log.info("[API] UserRegistration | Register | SUCCESS"))
+                .doOnError(error -> log.error("[API] UserRegistration | Register | ERROR | msg={}", error.getMessage()));
     }
 
 }

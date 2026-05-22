@@ -21,7 +21,7 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
                                UserRegistrationService userRegistrationService,
                                UserRoleGrpcMapper mapper,
                                UserRegistrationMapper userRegistrationMapper) {
-        log.info("Initializing UserRoleGrpcService with UserRoleService and UserRegistrationService");
+        log.info("[GRPC] UserRole | INIT");
 
         this.userRoleService = userRoleService;
         this.userRegistrationService = userRegistrationService;
@@ -31,18 +31,19 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
 
     @Override
     public void getRoleByUserIdAndCompanyId(UserRoleRequest request, StreamObserver<UserRoleProto> responseObserver) {
-        log.info("Received gRPC request to get role by userId: {} and companyId: {}", request.getUserId(), request.getCompanyId());
+        log.info("[GRPC] UserRole | GetRole | START | userId={} companyId={}", request.getUserId(), request.getCompanyId());
 
         userRoleService.getByUserIdAndCompanyId(request.getUserId(), request.getCompanyId())
                 .map(mapper::entityToProto)
                 .subscribe(
                         response -> {
+                            log.info("[GRPC] UserRole | GetRole | SUCCESS");
                             responseObserver.onNext(response);
                             responseObserver.onCompleted();
                         },
-                        error -> handleGrpcError(error, responseObserver),
+                        error -> handleGrpcError("GetRole", error, responseObserver),
                         () -> {
-                            // If empty, we can return an empty proto or error
+                            log.info("[GRPC] UserRole | GetRole | EMPTY");
                             responseObserver.onNext(UserRoleProto.getDefaultInstance());
                             responseObserver.onCompleted();
                         }
@@ -52,8 +53,8 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
     @Override
     public void updateUserRoles(UpdateUserRolesRequest request,
                                 StreamObserver<UserRoleProto> responseObserver) {
-        log.info("Received gRPC request to update user roles: companyId={}, userId={}, userRole={}",
-                request.getCompanyId(), request.getUserId(), request.getUserRole());
+        log.info("[GRPC] UserRole | Update | START | companyId={} userId={}",
+                request.getCompanyId(), request.getUserId());
 
         userRoleService.updateUserRoles(
                         request.getCompanyId(),
@@ -62,16 +63,19 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
                 .map(mapper::entityToProto)
                 .subscribe(
                         response -> {
+                            log.info("[GRPC] UserRole | Update | SUCCESS");
                             responseObserver.onNext(response);
                             responseObserver.onCompleted();
                         },
-                        error -> handleGrpcError(error, responseObserver)
+                        error -> handleGrpcError("Update", error, responseObserver)
                 );
     }
 
     @Override
     public void addUserRole(AddUserRoleRequest request,
                             StreamObserver<UserRoleProto> responseObserver) {
+        log.info("[GRPC] UserRole | Add | START | companyId={} userId={}",
+                request.getCompanyId(), request.getUserId());
         userRoleService.addUserRole(
                         request.getCompanyId(),
                         request.getUserId(),
@@ -80,29 +84,32 @@ public class UserRoleGrpcService extends UserRoleServiceGrpc.UserRoleServiceImpl
                 .map(mapper::entityToProto)
                 .subscribe(
                         response -> {
+                            log.info("[GRPC] UserRole | Add | SUCCESS");
                             responseObserver.onNext(response);
                             responseObserver.onCompleted();
                         },
-                        error -> handleGrpcError(error, responseObserver)
+                        error -> handleGrpcError("Add", error, responseObserver)
                 );
     }
 
     @Override
     public void assignRoleToNewUser(UserRegistrationProto request,
                                     StreamObserver<UserRegistrationProto> responseObserver) {
+        log.info("[GRPC] UserRole | AssignToNewUser | START | email={}", request.getUser().getEmail());
         userRegistrationService.assignRoleToNewUser(userRegistrationMapper.toDto(request))
                 .map(userRegistrationMapper::toProto)
                 .subscribe(
                         response -> {
+                            log.info("[GRPC] UserRole | AssignToNewUser | SUCCESS");
                             responseObserver.onNext(response);
                             responseObserver.onCompleted();
                         },
-                        error -> handleGrpcError(error, responseObserver)
+                        error -> handleGrpcError("AssignToNewUser", error, responseObserver)
                 );
     }
 
-    private void handleGrpcError(Throwable t, StreamObserver<?> responseObserver) {
-        log.error("gRPC Service Error: ", t);
+    private void handleGrpcError(String action, Throwable t, StreamObserver<?> responseObserver) {
+        log.error("[GRPC] UserRole | {} | ERROR | msg={}", action, t.getMessage());
         responseObserver.onError(io.grpc.Status.INTERNAL
                 .withDescription(t.getMessage())
                 .asRuntimeException());

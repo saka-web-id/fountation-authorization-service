@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class CompanyRoleService {
 
-    Logger logger = LoggerFactory.getLogger(CompanyRoleService.class);
+    private static final Logger log = LoggerFactory.getLogger(CompanyRoleService.class);
 
     private final CompanyRoleRepository companyRoleRepository;
 
@@ -30,7 +30,7 @@ public class CompanyRoleService {
     }
 
     public Flux<RoleDTO> getAllRolesByCompanyId(Long companyId) {
-        logger.info("Starting retrieval of roles for companyId: {}", companyId);
+        log.info("[COMPANY_ROLE] FetchAll | START | companyId={}", companyId);
 
         return findAllByCompanyId(companyId).flatMap(companyRole ->
                 roleService.getRoleById(companyRole.getRoleId())
@@ -39,29 +39,26 @@ public class CompanyRoleService {
     }
 
     private Flux<CompanyRole> findAllByCompanyId(Long companyId) {
-        logger.info("Querying CompanyRoleRepository for companyId: {}", companyId);
-
         return companyRoleRepository.findAllByCompanyId(companyId);
     }
 
     public Mono<CompanyRole> saveCompanyRole(Long companyId, RoleDTO savedRoled) {
-
+        log.info("[COMPANY_ROLE] Save | START | companyId={} roleId={}", companyId, savedRoled.getId());
         return companyRoleRepository.save(new CompanyRole(companyId, savedRoled.getId()));
     }
 
     public Mono<CompanyRole> createDefaultRolesForNewCompany(CompanyDTO company) {
+        log.info("[COMPANY_ROLE] CreateDefault | START | companyId={}", company.id());
         return Flux.fromArray(Role.RoleName.values())
-                // exclude SUPER_ADMIN
                 .filter(role -> role != Role.RoleName.SUPER_ADMIN)
                 .flatMap(role -> roleService.getRoleByName(role)
                         .flatMap(roleEntity -> {
                             CompanyRole companyRole = new CompanyRole(company.id(), roleEntity.getId());
                             return companyRoleRepository.save(companyRole)
-                                    .doOnNext(saved -> logger.info("Saved CompanyRole: {}", saved))
-                                    // only emit downstream if ADMIN
+                                    .doOnNext(saved -> log.info("[COMPANY_ROLE] CreateDefault | SAVED | role={} roleId={}", role, saved.getRoleId()))
                                     .filter(saved -> role == Role.RoleName.ADMIN);
                         })
                 )
-                .next(); // returns Mono<CompanyRole> for ADMIN only
+                .next();
     }
 }
