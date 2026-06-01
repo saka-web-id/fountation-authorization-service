@@ -1,6 +1,8 @@
 spring:
   application:
     name: fountation-authorization-service
+  config:
+    import: "optional:classpath:fountation-config.yaml"
   r2dbc:
     url: r2dbc:postgresql://XXXX:XXXX/fountation_authorization_db?currentSchema=authorization
     username: XXXX
