@@ -6,6 +6,7 @@ import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,18 +33,21 @@ public class RolePermissionService {
 
     private final UserRoleService userRoleService;
 
+    private final OutboxService outboxService;
+
     public RolePermissionService(RolePermissionRepository rolePermissionRepository,
                                  RoleService roleService,
                                  RoleMapper roleMapper,
                                  PermissionService permissionService,
                                  CompanyRoleService companyRoleService,
-                                 UserRoleService userRoleService) {
+                                 UserRoleService userRoleService, OutboxService outboxService) {
         this.rolePermissionRepository = rolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
         this.permissionService = permissionService;
         this.companyRoleService = companyRoleService;
         this.userRoleService = userRoleService;
+        this.outboxService = outboxService;
     }
 
     public Flux<PermissionDTO> getPermissionsByRoleId(Long roleId) {

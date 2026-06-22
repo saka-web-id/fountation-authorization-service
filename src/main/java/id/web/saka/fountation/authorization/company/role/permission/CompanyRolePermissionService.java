@@ -5,6 +5,7 @@ import id.web.saka.fountation.authorization.permission.PermissionDTO;
 import id.web.saka.fountation.authorization.permission.PermissionService;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import id.web.saka.fountation.configbase.fountation.FountationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +37,16 @@ public class CompanyRolePermissionService {
 
     private final FountationProperties fountationProperties;
 
+    private final OutboxService outboxService;
+
     public CompanyRolePermissionService(CompanyRolePermissionRepository companyRolePermissionRepository,
                                  RoleService roleService,
                                  RoleMapper roleMapper,
                                  PermissionService permissionService,
                                  CompanyRoleService companyRoleService,
                                  ReactiveRedisTemplate<String, CompanyRolePermissionDTO> redisTemplateCompanyRolePermissionDTO,
-                                 FountationProperties fountationProperties) {
+                                 FountationProperties fountationProperties,
+                                 OutboxService outboxService) {
         this.companyRolePermissionRepository = companyRolePermissionRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
@@ -50,6 +54,7 @@ public class CompanyRolePermissionService {
         this.companyRoleService = companyRoleService;
         this.redisTemplateCompanyRolePermissionDTO = redisTemplateCompanyRolePermissionDTO;
         this.fountationProperties = fountationProperties;
+        this.outboxService = outboxService;
     }
 
     public Flux<PermissionDTO> getPermissionsByCompanyIdRoleId(Long companyId, Long roleId) {
@@ -101,7 +106,8 @@ public class CompanyRolePermissionService {
         return roleService.saveRole(roleMapper.toRequestEntity(rolePermissionDTO))
                 .flatMap(savedRole -> saveRolePermission(companyId, roleId, rolePermissionDTO))
                 .flatMap(dto -> {
-                    return cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto)
+                    return outboxService.writeOutbox("COMPANY_ROLE_PERMISSION", "CRP-" + companyId + "-" + roleId, "ROLE_PERMISSIONS_UPDATED", dto)
+                            .then(cacheCompanyRolePermissionDTO(buildCacheKey(companyId, roleId), dto))
                             .onErrorResume(err -> {
                                 log.warn("[REDIS] Cache | ERROR | action=UPDATE msg={}", err.getMessage());
                                 return Mono.empty();

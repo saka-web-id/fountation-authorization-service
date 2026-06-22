@@ -6,6 +6,7 @@ import id.web.saka.fountation.authorization.company.role.permission.CompanyRoleP
 import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.user.UserDTO;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,13 @@ public class UserRegistrationService {
 
     private final CompanyRolePermissionService companyRolePermissionService;
 
-    public UserRegistrationService(CompanyRoleService companyRoleService, UserRoleService userRoleService, CompanyRolePermissionService companyRolePermissionService) {
+    private final OutboxService outboxService;
+
+    public UserRegistrationService(CompanyRoleService companyRoleService, UserRoleService userRoleService, CompanyRolePermissionService companyRolePermissionService, OutboxService outboxService) {
         this.companyRoleService = companyRoleService;
         this.userRoleService = userRoleService;
         this.companyRolePermissionService = companyRolePermissionService;
+        this.outboxService = outboxService;
     }
 
 
@@ -56,6 +60,7 @@ public class UserRegistrationService {
                                 return assignSuperAdminRoleToNewCompanyAdmin(userRegistrationDTO, companyRole);
                             }))
                             .doOnSuccess(v -> log.info("[USER_REGISTRATION] AssignRole | SUPER_ADMIN_COMPLETED"))
+                            .flatMap(v -> outboxService.writeOutbox("USER_REGISTRATION", "REG-" + userRegistrationDTO.user().getId(), "USER_REGISTERED", userRegistrationDTO))
                             .thenReturn(userRegistrationDTO);
                 })
                 .doOnError(e -> log.error("[USER_REGISTRATION] AssignRole | ERROR | type={} msg={}",

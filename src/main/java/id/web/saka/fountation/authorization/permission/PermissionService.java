@@ -1,8 +1,10 @@
 package id.web.saka.fountation.authorization.permission;
 
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -15,9 +17,12 @@ public class PermissionService {
 
     private final PermissionMapper permissionMapper;
 
-    public PermissionService(PermissionRepository permissionRepository, PermissionMapper permissionMapper) {
+    private final OutboxService outboxService;
+
+    public PermissionService(PermissionRepository permissionRepository, PermissionMapper permissionMapper, OutboxService outboxService) {
         this.permissionRepository = permissionRepository;
         this.permissionMapper = permissionMapper;
+        this.outboxService = outboxService;
     }
 
     public Mono<PermissionDTO> getPermissionById(Long permissionId) {
@@ -30,16 +35,20 @@ public class PermissionService {
                 .map(permissionMapper::toDTO);
     }
 
+    @Transactional
     public Mono<PermissionDTO> save(PermissionDTO dto) {
         log.info("[PERMISSION] Save | START | dto={}", dto);
         return permissionRepository.findByResourceAndAction(dto.resource(), dto.action())
                 .flatMap(existing -> Mono.<Permission>error(new RuntimeException("Permission with this resource and action already exists.")))
                 .switchIfEmpty(Mono.defer(() -> permissionRepository.save(permissionMapper.toEntity(dto))))
                 .map(permissionMapper::toDTO)
+                .flatMap(saved -> outboxService.writeOutbox("PERMISSION", "PERM-" + saved.id(), "PERMISSION_CREATED", saved)
+                        .thenReturn(saved))
                 .doOnSuccess(saved -> log.info("[PERMISSION] Save | SUCCESS | id={}", saved.id()))
                 .doOnError(e -> log.error("[PERMISSION] Save | ERROR | msg={}", e.getMessage()));
     }
 
+    @Transactional
     public Mono<PermissionDTO> update(Long id, PermissionDTO dto) {
         log.info("[PERMISSION] Update | START | id={} dto={}", id, dto);
 
@@ -57,6 +66,8 @@ public class PermissionService {
                             }));
                 })
                 .map(permissionMapper::toDTO)
+                .flatMap(updated -> outboxService.writeOutbox("PERMISSION", "PERM-" + updated.id(), "PERMISSION_UPDATED", updated)
+                        .thenReturn(updated))
                 .doOnSuccess(updated -> log.info("[PERMISSION] Update | SUCCESS | id={}", updated.id()))
                 .doOnError(e -> log.error("[PERMISSION] Update | ERROR | id={} msg={}", id, e.getMessage()));
     }

@@ -4,6 +4,7 @@ import id.web.saka.fountation.authorization.company.role.permission.CompanyRoleP
 import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.user.UserService;
 import id.web.saka.fountation.authorization.user.role.UserRoleService;
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -24,10 +25,13 @@ public class PolicyService {
 
     private final UserRoleService userRoleService;
 
-    public PolicyService(UserService userService, UserRoleService userRoleService, CompanyRolePermissionService rolePermissionService) {
+    private final OutboxService outboxService;
+
+    public PolicyService(UserService userService, UserRoleService userRoleService, CompanyRolePermissionService rolePermissionService, OutboxService outboxService) {
         this.userService = userService;
         this.userRoleService = userRoleService;
         this.rolePermissionService = rolePermissionService;
+        this.outboxService = outboxService;
     }
 
 
@@ -47,7 +51,9 @@ public class PolicyService {
                             // 1. SUPER_ADMIN BYPASS
                             if (userRole.getName().equals(Role.RoleName.SUPER_ADMIN)) {
                                 log.info("[POLICY] Evaluate | BYPASS | uid={} role=SUPER_ADMIN | result=ALLOWED", uid);
-                                return Mono.just(new PolicyResponseDTO(true, "Allowed: Super Admin Privilege"));
+                                PolicyResponseDTO response = new PolicyResponseDTO(true, "Allowed: Super Admin Privilege");
+                                return outboxService.writeOutbox("POLICY_EVALUATION", "UID-" + uid, "ACCESS_ALLOWED_BYPASS", request)
+                                        .thenReturn(response);
                             }
 
                             // 2. STANDARD PERMISSION CHECK
@@ -60,11 +66,18 @@ public class PolicyService {
                                                 uid, userRole.getName(), request.resource(), request.action());
                                         return new PolicyResponseDTO(true, "Allowed by role " + userRole.getName());
                                     })
-                                    .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: No matching permission"));
+                                    .defaultIfEmpty(new PolicyResponseDTO(false, "Denied: No matching permission"))
+                                    .flatMap(response -> {
+                                        String eventType = response.isAllow() ? "ACCESS_ALLOWED" : "ACCESS_DENIED";
+                                        return outboxService.writeOutbox("POLICY_EVALUATION", "UID-" + uid, eventType, request)
+                                                .thenReturn(response);
+                                    });
                         })
                         .switchIfEmpty(Mono.defer(() -> {
                             log.warn("[POLICY] Evaluate | DENIED | uid={} companyId={} | reason=NO_ROLE_ASSIGNED", uid, companyId);
-                            return Mono.just(new PolicyResponseDTO(false, "Denied: No assigned role"));
+                            PolicyResponseDTO response = new PolicyResponseDTO(false, "Denied: No assigned role");
+                            return outboxService.writeOutbox("POLICY_EVALUATION", "UID-" + uid, "ACCESS_DENIED_NO_ROLE", request)
+                                    .thenReturn(response);
                         }))
                 )
                 .onErrorResume(e -> {

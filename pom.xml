@@ -47,11 +47,15 @@
 			<artifactId>fountation-grpc-contract</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>id.web.saka.fountation</groupId>
 			<artifactId>fountation-config-service</artifactId>
 			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>id.web.saka.fountation.common</groupId>
+			<artifactId>fountation-common-messaging</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 		<!-- WebFlux -->

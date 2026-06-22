@@ -5,6 +5,7 @@ import id.web.saka.fountation.authorization.role.Role;
 import id.web.saka.fountation.authorization.role.RoleDTO;
 import id.web.saka.fountation.authorization.role.RoleMapper;
 import id.web.saka.fountation.authorization.role.RoleService;
+import id.web.saka.fountation.common.messaging.outbox.OutboxService;
 import id.web.saka.fountation.authorization.role.permission.RolePermissionDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,13 @@ public class CompanyRoleService {
 
     private final RoleMapper roleMapper;
 
-    public CompanyRoleService(CompanyRoleRepository companyRoleRepository, RoleService roleService, RoleMapper roleMapper) {
+    private final OutboxService outboxService;
+
+    public CompanyRoleService(CompanyRoleRepository companyRoleRepository, RoleService roleService, RoleMapper roleMapper, OutboxService outboxService) {
         this.companyRoleRepository = companyRoleRepository;
         this.roleService = roleService;
         this.roleMapper = roleMapper;
+        this.outboxService = outboxService;
     }
 
     public Flux<RoleDTO> getAllRolesByCompanyId(Long companyId) {
@@ -44,7 +48,9 @@ public class CompanyRoleService {
 
     public Mono<CompanyRole> saveCompanyRole(Long companyId, RoleDTO savedRoled) {
         log.info("[COMPANY_ROLE] Save | START | companyId={} roleId={}", companyId, savedRoled.getId());
-        return companyRoleRepository.save(new CompanyRole(companyId, savedRoled.getId()));
+        return companyRoleRepository.save(new CompanyRole(companyId, savedRoled.getId()))
+                .flatMap(saved -> outboxService.writeOutbox("COMPANY_ROLE", "CR-" + saved.getCompanyId() + "-" + saved.getRoleId(), "COMPANY_ROLE_SAVED", saved)
+                        .thenReturn(saved));
     }
 
     public Mono<CompanyRole> createDefaultRolesForNewCompany(CompanyDTO company) {
@@ -56,6 +62,8 @@ public class CompanyRoleService {
                             CompanyRole companyRole = new CompanyRole(company.id(), roleEntity.getId());
                             return companyRoleRepository.save(companyRole)
                                     .doOnNext(saved -> log.info("[COMPANY_ROLE] CreateDefault | SAVED | role={} roleId={}", role, saved.getRoleId()))
+                                    .flatMap(saved -> outboxService.writeOutbox("COMPANY_ROLE", "CR-" + saved.getCompanyId() + "-" + saved.getRoleId(), "COMPANY_ROLE_CREATED_DEFAULT", saved)
+                                            .thenReturn(saved))
                                     .filter(saved -> role == Role.RoleName.ADMIN);
                         })
                 )
